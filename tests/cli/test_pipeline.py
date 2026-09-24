@@ -83,6 +83,37 @@ class TestPipelineRun:
         assert "URLhaus" not in payload["sources"]
         assert payload["sources"]["Files"]["count"] == 1
 
+    def test_urlhaus_csv_file_used_instead_of_live_fetch(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("OTX_API_KEY", raising=False)
+        csv_path = tmp_path / "urlhaus_recent.csv"
+        csv_path.write_text(SAMPLE_URLHAUS_CSV)
+
+        with (
+            patch("intelgraph.cli.pipeline.httpx.get") as mock_get,
+            patch(
+                "intelgraph.cli.pipeline.httpx.post", return_value=_fake_feed_response()
+            ) as mock_post,
+        ):
+            runner = CliRunner()
+            result = runner.invoke(
+                pipeline_run, ["--urlhaus-csv", str(csv_path), "--urlhaus-limit", "10"]
+            )
+        assert result.exit_code == 0, result.output
+        mock_get.assert_not_called()
+        assert f"Loading URLhaus CSV from {csv_path}" in result.output
+        payload = mock_post.call_args.kwargs["json"]
+        assert payload["sources"]["URLhaus"]["iocs"] == 2
+
+    def test_urlhaus_csv_conflicts_with_skip_urlhaus(self, tmp_path):
+        csv_path = tmp_path / "urlhaus_recent.csv"
+        csv_path.write_text(SAMPLE_URLHAUS_CSV)
+        runner = CliRunner()
+        result = runner.invoke(
+            pipeline_run, ["--skip-urlhaus", "--urlhaus-csv", str(csv_path)]
+        )
+        assert result.exit_code != 0
+        assert "conflict" in result.output
+
     def test_server_not_running_gives_friendly_error(self, monkeypatch):
         monkeypatch.delenv("OTX_API_KEY", raising=False)
         with (
