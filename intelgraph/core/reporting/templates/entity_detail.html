@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;gap:24px;flex-wrap:wrap">
+    <div><span class="lbl">Entity ID</span><div class="mono" style="font-size:14px;margin-top:2px">{{ entity_id }}</div></div>
+    <div><span class="lbl">Type</span><div style="font-size:14px;font-weight:600;margin-top:2px">{{ entity_type }}</div></div>
+    <div><span class="lbl">Identifier</span><div class="mono" style="font-size:14px;margin-top:2px">{{ entity_identifier }}</div></div>
+    <div><span class="lbl">Confidence</span><div style="font-size:14px;font-weight:600;margin-top:2px">{{ confidence }}</div></div>
+    <div><span class="lbl">Threat Score</span><div style="font-size:14px;font-weight:600;margin-top:2px">{{ threat_score }}</div></div>
+  </div>
+</div>
+
+<h2>Evidence</h2>
+{% if evidence_list %}
+  {% for ev in evidence_list %}
+  <div class="evidence">
+    <strong>{{ ev.source }}</strong> &mdash; {{ ev.content[:80] }}
+    <div style="color:#636c76;margin-top:2px">collected: {{ ev.collected_at[:19] }} | trust: {{ ev.trust_score }} | reliability: {{ ev.reliability_score }}</div>
+  </div>
+  {% endfor %}
+{% else %}
+<p>No evidence for this entity.</p>
+{% endif %}
+
+<h2>Relationships</h2>
+{% if relationships %}
+<table>
+  <tr><th>Source</th><th>Target</th><th>Type</th><th>First Seen</th><th>Last Seen</th></tr>
+  {% for rel in relationships %}
+  <tr>
+    <td class="mono">{{ rel.source_id[:12] }}…</td>
+    <td class="mono">{{ rel.target_id[:12] }}…</td>
+    <td>{{ rel.type }}</td>
+    <td>{{ rel.first_seen[:10] }}</td>
+    <td>{{ rel.last_seen[:10] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No relationships.</p>
+{% endif %}
+
+<h2>Evidence Chain</h2>
+{% if chain %}
+<div style="margin:8px 0">
+  <p><strong>Verification Status:</strong> {{ chain.verification_status }}</p>
+  <p><strong>Overall Confidence:</strong> {{ chain.overall_confidence }}</p>
+</div>
+<table>
+  <tr><th>Step</th><th>Source</th><th>Support</th><th>Confidence</th></tr>
+  {% for step in chain.steps %}
+  <tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ step.source }}</td>
+    <td>{{ step.support_type }}</td>
+    <td>{{ step.confidence }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No evidence chain available.</p>
+{% endif %}
+
+<h2>Playbook Status</h2>
+{% if playbook_status %}
+<div class="card">
+  <p><strong>Playbook:</strong> {{ playbook_status.playbook_name }}</p>
+  <p><strong>Matched:</strong> {{ playbook_status.matched_at }}</p>
+  <table>
+    <tr><th>Step</th><th>Action</th><th>Automated</th><th>Completed</th></tr>
+    {% for step in playbook_status.steps %}
+    <tr>
+      <td>{{ step.description }}</td>
+      <td>{{ step.action_type }}</td>
+      <td>{{ step.automated }}</td>
+      <td>{{ step.completed }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p>No playbook matched.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+IntelGraph has been deployed as "{{ include "intelgraph.fullname" . }}" in namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+Access it at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if eq .Values.service.type "LoadBalancer" }}
+Get the external IP:
+  kubectl get svc {{ include "intelgraph.fullname" . }} -n {{ .Release.Namespace }} -w
+{{- else }}
+Port-forward to access it locally:
+  kubectl port-forward svc/{{ include "intelgraph.fullname" . }} 8000:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  open http://localhost:8000
+{{- end }}
+
+{{- if not .Values.secrets.INTELGRAPH_SECRET_KEY }}
+
+WARNING: secrets.INTELGRAPH_SECRET_KEY was not set. If secrets.create=true, the
+release will fail until you provide one, e.g.:
+  --set secrets.INTELGRAPH_SECRET_KEY=$(openssl rand -hex 32)
+{{- end }}
+
+{{- if and (eq .Values.storage.backend "sqlite") (gt (.Values.replicaCount | int) 1) }}
+
+WARNING: storage.backend=sqlite with replicaCount > 1. SQLite does not support
+concurrent writers across pods. Use storage.backend=postgres (with an external
+Postgres and DATABASE_URL secret) when running more than one replica.
+{{- end }}

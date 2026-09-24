@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="metrics">
+  <div class="card"><div class="big">{{ node_count }}</div><div class="lbl">Graph Nodes</div></div>
+  <div class="card"><div class="big">{{ edge_count }}</div><div class="lbl">Relationships</div></div>
+  <div class="card"><div class="big">{{ alert_count }}</div><div class="lbl">Alerts</div></div>
+  <div class="card"><div class="big">{{ incident_count }}</div><div class="lbl">Incidents</div></div>
+  <div class="card"><div class="big">{{ contradiction_count }}</div><div class="lbl">Contradictions</div></div>
+  <div class="card"><div class="big">{{ chain_count }}</div><div class="lbl">Evidence Chains</div></div>
+</div>
+
+<h2>Top Threats by Score</h2>
+<table>
+  <tr><th>Entity</th><th>Type</th><th>Threat Score</th><th>Confidence</th><th>Evidence</th><th>Edges</th></tr>
+  {% for n in top_threats %}
+  <tr>
+    <td class="mono">{{ n.entity_identifier }}</td>
+    <td>{{ n.entity_type }}</td>
+    <td><span class="badge {% if n.threat_score >= 75 %}badge-critical{% elif n.threat_score >= 50 %}badge-high{% elif n.threat_score >= 25 %}badge-medium{% else %}badge-low{% endif %}">{{ n.threat_score }}</span></td>
+    <td>{{ n.confidence }}</td>
+    <td>{{ n.evidence_count }}</td>
+    <td>{{ n.edge_count }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Alerts</h2>
+{% if alerts %}
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Message</th><th>Category</th></tr>
+  {% for a in alerts %}
+  <tr>
+    <td class="mono">{{ a.alert_id[:12] }}…</td>
+    <td><span class="badge badge-{{ a.severity }}">{{ a.severity }}</span></td>
+    <td>{{ a.message }}</td>
+    <td>{{ a.category }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No alerts in this period.</p>
+{% endif %}
+
+<h2>Incidents</h2>
+{% if incidents %}
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Message</th><th>Confirmed</th></tr>
+  {% for inc in incidents %}
+  <tr>
+    <td class="mono">{{ inc.alert_id[:12] }}…</td>
+    <td><span class="badge badge-{{ inc.severity }}">{{ inc.severity }}</span></td>
+    <td>{{ inc.message }}</td>
+    <td>{{ inc.confirmed }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No incidents in this period.</p>
+{% endif %}
+
+<h2>Source Distribution</h2>
+<table>
+  <tr><th>Source</th><th>Count</th></tr>
+  {% for src, cnt in sources %}
+  <tr><td>{{ src }}</td><td>{{ cnt }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Entity Type Breakdown</h2>
+<table>
+  <tr><th>Type</th><th>Count</th></tr>
+  {% for etype, cnt in entity_types %}
+  <tr><td>{{ etype }}</td><td>{{ cnt }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

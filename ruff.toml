@@ -1,0 +1,2 @@
+# Ruff lint settings are configured in pyproject.toml [tool.ruff.lint].
+# This file is intentionally empty — pyproject.toml is the single source of truth.

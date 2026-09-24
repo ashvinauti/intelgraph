@@ -1,0 +1,107 @@
+replicaCount: 1
+
+image:
+  repository: intelgraph
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: intelgraph.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+
+probes:
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Non-secret application configuration, injected as environment variables via a ConfigMap.
+config:
+  INTELGRAPH_DEPLOYMENT: production
+  INTELGRAPH_LOG_LEVEL: info
+  INTELGRAPH_API_READ_AUTH: "false"
+  INTELGRAPH_CORS_ORIGINS: "*"
+  INTELGRAPH_STORAGE_PATH: /data/storage
+  INTELGRAPH_REPORT_DIR: /data/reports
+
+# Storage backend: "sqlite" (with a PVC) or "postgres" (external, via DATABASE_URL secret).
+storage:
+  backend: sqlite
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+
+# Secret values. Prefer setting these via --set or a values override file / external
+# secret manager rather than committing real values here.
+secrets:
+  # Create the Secret from these values. Set create: false to reference an
+  # existing Secret instead (existingSecret).
+  create: true
+  existingSecret: ""
+  INTELGRAPH_SECRET_KEY: ""
+  DATABASE_URL: ""
+  OTX_API_KEY: ""
+  VIRUSTOTAL_API_KEY: ""
+  SHODAN_API_KEY: ""
+
+redis:
+  enabled: false
+  url: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
