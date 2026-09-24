@@ -193,6 +193,18 @@ def pipeline_run(
         "ner_samples": ner_samples,
     }
     click.echo(f"Feeding dashboard at {base_url}/dashboard/feed ...")
-    resp = httpx.post(f"{base_url}/dashboard/feed", json=payload, timeout=30.0)
-    resp.raise_for_status()
+    try:
+        resp = httpx.post(f"{base_url}/dashboard/feed", json=payload, timeout=30.0)
+        resp.raise_for_status()
+    except httpx.ConnectError as e:
+        raise click.ClickException(
+            f"Could not reach {base_url} ({e}).\n"
+            "Is the IntelGraph server running? Start it in another terminal first:\n"
+            "  uv run uvicorn intelgraph.api.main:app --reload\n"
+            "Then re-run this command (or pass --no-feed to skip feeding the dashboard)."
+        ) from e
+    except httpx.HTTPStatusError as e:
+        raise click.ClickException(
+            f"Dashboard feed request failed: {e.response.status_code} {e.response.text}"
+        ) from e
     click.echo(f"Done. Open {base_url}/ to view the dashboard.")

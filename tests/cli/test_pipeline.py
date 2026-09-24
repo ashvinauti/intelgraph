@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import httpx
 from click.testing import CliRunner
 
 from intelgraph.cli.pipeline import pipeline_run
@@ -81,6 +82,24 @@ class TestPipelineRun:
         payload = mock_post.call_args.kwargs["json"]
         assert "URLhaus" not in payload["sources"]
         assert payload["sources"]["Files"]["count"] == 1
+
+    def test_server_not_running_gives_friendly_error(self, monkeypatch):
+        monkeypatch.delenv("OTX_API_KEY", raising=False)
+        with (
+            patch("intelgraph.cli.pipeline.httpx.get", return_value=_fake_urlhaus_response()),
+            patch(
+                "intelgraph.cli.pipeline.httpx.post",
+                side_effect=httpx.ConnectError("Connection refused"),
+            ),
+        ):
+            runner = CliRunner()
+            result = runner.invoke(
+                pipeline_run, ["--base-url", "http://localhost:9999", "--urlhaus-limit", "10"]
+            )
+        assert result.exit_code != 0
+        assert "Could not reach http://localhost:9999" in result.output
+        assert "uv run uvicorn intelgraph.api.main:app --reload" in result.output
+        assert "Traceback" not in result.output
 
     def test_no_sources_errors(self, monkeypatch):
         monkeypatch.delenv("OTX_API_KEY", raising=False)
