@@ -19,7 +19,8 @@ from pathlib import Path
 
 import uvicorn
 
-os.environ["OTX_API_KEY"] = "bc74aac50ae436dee05bfae89647406f73eed2cf947939f9d3e25461954ea12f"
+if not os.environ.get("OTX_API_KEY"):
+    raise SystemExit("Set OTX_API_KEY in your environment before running this script.")
 
 from intelgraph.api.routers.dashboard import dashboard_state
 from intelgraph.core.pipeline.chain import Pipeline

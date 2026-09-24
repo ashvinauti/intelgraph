@@ -6,7 +6,8 @@ import os
 import time
 from pathlib import Path
 
-os.environ["OTX_API_KEY"] = "bc74aac50ae436dee05bfae89647406f73eed2cf947939f9d3e25461954ea12f"
+if not os.environ.get("OTX_API_KEY"):
+    raise SystemExit("Set OTX_API_KEY in your environment before running this script.")
 
 from intelgraph.core.source.otx import OtxClient, fetch_urlhaus_iocs
 
