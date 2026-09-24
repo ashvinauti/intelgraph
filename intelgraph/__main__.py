@@ -12,6 +12,7 @@ from intelgraph.cli.graph import graph_group
 from intelgraph.cli.metaintel import metaintel_group
 from intelgraph.cli.nlp import nlp_group
 from intelgraph.cli.ops import ops_group
+from intelgraph.cli.pipeline import pipeline_group
 from intelgraph.cli.prediction import prediction_group
 from intelgraph.cli.reasoning import reasoning_group
 from intelgraph.cli.report import report_group
@@ -92,6 +93,7 @@ main.add_command(cognitive_group)
 main.add_command(agent_group)
 main.add_command(metaintel_group)
 main.add_command(ucos_group)
+main.add_command(pipeline_group)
 
 
 if __name__ == "__main__":

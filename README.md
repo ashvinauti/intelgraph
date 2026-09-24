@@ -173,6 +173,26 @@ helm install intelgraph ./deploy/helm/intelgraph \
   --set secrets.INTELGRAPH_SECRET_KEY=$(openssl rand -hex 32)
 ```
 
+### Populate the dashboard with live data
+
+A fresh install starts with an empty knowledge graph, so the Dashboard/Graph views show
+zeros until you run the pipeline at least once. With the server running:
+
+```bash
+uv run intelgraph pipeline run
+```
+
+This pulls the live URLhaus "recent" feed (no API key needed), runs it through the
+NLP/entity-extraction/graph pipeline, and feeds the result to the running server's
+dashboard. Set `OTX_API_KEY` first to also include OTX pulses:
+
+```bash
+export OTX_API_KEY=your-otx-key   # optional
+uv run intelgraph pipeline run --base-url http://localhost:8000
+```
+
+Use `--no-feed` to just see the extraction summary without updating the dashboard.
+
 ### Test
 
 ```bash
@@ -308,8 +328,8 @@ uv run pytest tests/test_pipeline.py -v
 - [ ] Custom connector framework
 
 ### v1.2 (Q4 2026)
-- [ ] GraphQL API
-- [ ] Kubernetes Helm charts
+- [x] GraphQL API — see [CHANGELOG.md](./CHANGELOG.md)
+- [x] Kubernetes Helm charts — see [deploy/helm/intelgraph](./deploy/helm/intelgraph)
 - [ ] SIEM integrations (Splunk, ELK)
 
 ### v2.0 (2027)
