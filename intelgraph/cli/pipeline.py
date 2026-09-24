@@ -30,16 +30,27 @@ def pipeline_group() -> None:
     pass
 
 
-def _fetch_urlhaus_source(limit: int) -> tuple[dict[str, Any], int]:
-    """Fetch the URLhaus 'recent' CSV feed and build a pipeline source dict."""
-    resp = httpx.get(URLHAUS_CSV_URL, timeout=30.0, follow_redirects=True)
-    resp.raise_for_status()
-    reader = csv.reader(resp.text.splitlines())
+def _parse_urlhaus_csv(text: str, limit: int) -> tuple[dict[str, Any], int]:
+    """Parse URLhaus 'recent' CSV text (the id,dateadded,url,... format) into a
+    pipeline source dict, pulling just the URL column."""
+    reader = csv.reader(text.splitlines())
     rows = [row for row in reader if row and not row[0].startswith("#")]
     urls = [row[2] for row in rows[:limit] if len(row) > 2]
-    text = "\n".join(urls)
-    source = {"id": "urlhaus_recent", "name": f"URLhaus (recent {len(urls)})", "text": text, "value": 60}
+    joined = "\n".join(urls)
+    source = {"id": "urlhaus_recent", "name": f"URLhaus (recent {len(urls)})", "text": joined, "value": 60}
     return source, len(urls)
+
+
+def _fetch_urlhaus_source(limit: int) -> tuple[dict[str, Any], int]:
+    """Fetch the URLhaus 'recent' CSV feed live and build a pipeline source dict."""
+    resp = httpx.get(URLHAUS_CSV_URL, timeout=30.0, follow_redirects=True)
+    resp.raise_for_status()
+    return _parse_urlhaus_csv(resp.text, limit)
+
+
+def _load_urlhaus_csv_file(path: str, limit: int) -> tuple[dict[str, Any], int]:
+    """Parse a manually downloaded URLhaus CSV file (same format as the live feed)."""
+    return _parse_urlhaus_csv(Path(path).read_text(), limit)
 
 
 def _load_file_sources(paths: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -98,7 +109,15 @@ def _fetch_otx_sources(pulse_limit: int) -> tuple[list[dict[str, Any]], int]:
     "--skip-urlhaus",
     is_flag=True,
     default=False,
-    help="Don't fetch the live URLhaus feed (useful offline, or when only using --file)",
+    help="Don't use URLhaus at all (useful offline, or when only using --file)",
+)
+@click.option(
+    "--urlhaus-csv",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Path to a manually downloaded URLhaus CSV (same format as "
+    "https://urlhaus.abuse.ch/downloads/csv_recent/) to use instead of fetching live. "
+    "Conflicts with --skip-urlhaus.",
 )
 @click.option(
     "--file",
@@ -116,12 +135,20 @@ def pipeline_run(
     otx_pulses: int,
     no_feed: bool,
     skip_urlhaus: bool,
+    urlhaus_csv: str | None,
     files: tuple[str, ...],
 ) -> None:
+    if skip_urlhaus and urlhaus_csv:
+        raise click.UsageError("--skip-urlhaus and --urlhaus-csv conflict; pass only one.")
+
     urlhaus_source = None
     urlhaus_count = 0
     if skip_urlhaus:
         click.echo("Skipping URLhaus (--skip-urlhaus)")
+    elif urlhaus_csv:
+        click.echo(f"Loading URLhaus CSV from {urlhaus_csv}...")
+        urlhaus_source, urlhaus_count = _load_urlhaus_csv_file(urlhaus_csv, urlhaus_limit)
+        click.echo(f"  {urlhaus_count} entries")
     else:
         click.echo("Fetching URLhaus (recent)...")
         urlhaus_source, urlhaus_count = _fetch_urlhaus_source(urlhaus_limit)
@@ -193,6 +220,18 @@ def pipeline_run(
         "ner_samples": ner_samples,
     }
     click.echo(f"Feeding dashboard at {base_url}/dashboard/feed ...")
-    resp = httpx.post(f"{base_url}/dashboard/feed", json=payload, timeout=30.0)
-    resp.raise_for_status()
+    try:
+        resp = httpx.post(f"{base_url}/dashboard/feed", json=payload, timeout=30.0)
+        resp.raise_for_status()
+    except httpx.ConnectError as e:
+        raise click.ClickException(
+            f"Could not reach {base_url} ({e}).\n"
+            "Is the IntelGraph server running? Start it in another terminal first:\n"
+            "  uv run uvicorn intelgraph.api.main:app --reload\n"
+            "Then re-run this command (or pass --no-feed to skip feeding the dashboard)."
+        ) from e
+    except httpx.HTTPStatusError as e:
+        raise click.ClickException(
+            f"Dashboard feed request failed: {e.response.status_code} {e.response.text}"
+        ) from e
     click.echo(f"Done. Open {base_url}/ to view the dashboard.")

@@ -206,6 +206,18 @@ uv run intelgraph pipeline run --skip-urlhaus --file samples/synthetic_iocs.txt
 infrastructure — safe to run, inspect, or extend with your own fake IOCs.
 `--file` can be passed multiple times to combine several sources.
 
+If you've manually downloaded a URLhaus CSV (e.g. from a browser, or for offline use)
+instead of letting the command fetch it live, point `--urlhaus-csv` at it:
+
+```bash
+uv run intelgraph pipeline run --urlhaus-csv path/to/urlhaus_recent.csv
+```
+
+It must be in URLhaus's own `csv_recent` format (the file downloaded from
+https://urlhaus.abuse.ch/downloads/csv_recent/) — `--urlhaus-csv` parses that format
+specifically, pulling out the URL column, unlike `--file` which treats its input as
+plain text. `--urlhaus-csv` and `--skip-urlhaus` are mutually exclusive.
+
 ### Test
 
 ```bash
