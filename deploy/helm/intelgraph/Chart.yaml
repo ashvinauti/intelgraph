@@ -1,0 +1,18 @@
+apiVersion: v2
+name: intelgraph
+description: Open-source threat intelligence platform with knowledge graph correlation and evidence-based alerts.
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+home: https://github.com/ashvinauti/intelgraph
+sources:
+  - https://github.com/ashvinauti/intelgraph
+  - https://github.com/Berkayy123-h/intelgraph
+maintainers:
+  - name: IntelGraph Contributors
+keywords:
+  - threat-intelligence
+  - cti
+  - knowledge-graph
+  - security
+  - soc

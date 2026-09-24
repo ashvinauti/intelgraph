@@ -1,0 +1,17 @@
+{{- if and (eq .Values.storage.backend "sqlite") .Values.storage.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "intelgraph.fullname" . }}-data
+  labels:
+    {{- include "intelgraph.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .Values.storage.persistence.accessModes | nindent 4 }}
+  {{- if .Values.storage.persistence.storageClassName }}
+  storageClassName: {{ .Values.storage.persistence.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.persistence.size }}
+{{- end }}

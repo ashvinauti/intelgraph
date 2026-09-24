@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="metrics">
+  <div class="card"><div class="big">{{ threats }}</div><div class="lbl">Threats Detected</div></div>
+  <div class="card"><div class="big">{{ incidents }}</div><div class="lbl">Incidents</div></div>
+  <div class="card"><div class="big">{{ high_risk_cves }}</div><div class="lbl">High-Risk CVEs</div></div>
+  <div class="card"><div class="big">{{ alerts }}</div><div class="lbl">Alerts Triggered</div></div>
+  <div class="card"><div class="big">{{ entities }}</div><div class="lbl">Entities Tracked</div></div>
+  <div class="card"><div class="big">{{ sources }}</div><div class="lbl">Data Sources</div></div>
+</div>
+
+<h2>Key Findings</h2>
+<ul>
+  {% for finding in findings %}
+  <li>{{ finding }}</li>
+  {% endfor %}
+</ul>
+
+<h2>Top Threats This Period</h2>
+{% if top_threats %}
+<table>
+  <tr><th>Entity</th><th>Type</th><th>Score</th><th>Risk Level</th></tr>
+  {% for t in top_threats %}
+  <tr>
+    <td class="mono">{{ t.entity_identifier }}</td>
+    <td>{{ t.entity_type }}</td>
+    <td>{{ t.threat_score }}</td>
+    <td><span class="badge {% if t.threat_score >= 75 %}badge-critical{% elif t.threat_score >= 50 %}badge-high{% else %}badge-medium{% endif %}">{{ "Critical" if t.threat_score >= 75 else "High" if t.threat_score >= 50 else "Medium" }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No significant threats detected.</p>
+{% endif %}
+
+<h2>Recommendations</h2>
+<ul>
+  {% for rec in recommendations %}
+  <li>{{ rec }}</li>
+  {% endfor %}
+</ul>
+
+<h2>Playbook Actions</h2>
+{% if playbook_actions %}
+<table>
+  <tr><th>Playbook</th><th>Steps Completed</th><th>Steps Pending</th></tr>
+  {% for pb in playbook_actions %}
+  <tr>
+    <td>{{ pb.name }}</td>
+    <td>{{ pb.completed }}</td>
+    <td>{{ pb.pending }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No playbook actions this period.</p>
+{% endif %}
+{% endblock %}

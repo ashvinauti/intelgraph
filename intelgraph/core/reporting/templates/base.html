@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} — IntelGraph Report</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #c7d0dd; font-size: 13px; line-height: 1.5; padding: 40px; background: #080b11; }
+@media print { body { padding: 20px; background: #fff; color: #1f2328; } }
+.header { border-bottom: 2px solid #4c8dff; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+.header h1 { font-size: 22px; color: #eef3fa; }
+.header .logo { font-size: 14px; font-weight: 700; color: #4c8dff; letter-spacing: -0.01em; }
+.header .meta { font-size: 12px; color: #576273; margin-top: 4px; }
+.header .meta span { margin-right: 16px; }
+h2 { font-size: 16px; color: #eef3fa; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #212b39; }
+h3 { font-size: 14px; color: #c7d0dd; margin: 16px 0 8px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 12px; }
+th { text-align: left; padding: 8px 10px; background: #0d121a; border-bottom: 2px solid #212b39; font-weight: 600; color: #8b97a9; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+td { padding: 7px 10px; border-bottom: 1px solid #182030; color: #c7d0dd; }
+tr:hover td { background: #0d121a; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.badge-critical { background: rgba(255,77,94,.15); color: #ff7b72; }
+.badge-high { background: rgba(255,171,61,.15); color: #d29922; }
+.badge-medium { background: rgba(76,141,255,.15); color: #58a6ff; }
+.badge-low { background: rgba(51,209,155,.15); color: #3fb950; }
+.card { background: #0d121a; border: 1px solid #212b39; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.card .big { font-size: 28px; font-weight: 700; color: #eef3fa; }
+.card .lbl { font-size: 11px; color: #576273; text-transform: uppercase; letter-spacing: 0.05em; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #212b39; font-size: 11px; color: #576273; }
+pre { background: #0d121a; border: 1px solid #212b39; border-radius: 6px; padding: 10px; font-size: 11px; overflow-x: auto; color: #c7d0dd; }
+ul { margin: 4px 0 8px 20px; }
+li { margin-bottom: 3px; color: #c7d0dd; }
+.evidence { background: #0d121a; border-left: 3px solid #4c8dff; padding: 8px 12px; margin: 4px 0; font-size: 11px; color: #8b97a9; border-radius: 0 6px 6px 0; }
+.mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo">IntelGraph</div>
+    <h1>{{ title }}</h1>
+    <div class="meta">
+      <span>Generated: {{ generated_at[:19] }}</span>
+      {% if time_range_start and time_range_end %}
+      <span>Period: {{ time_range_start[:10] }} — {{ time_range_end[:10] }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#576273">
+    <div style="font-size:24px;font-weight:700;color:#4c8dff">IG</div>
+    <div>Automated Report</div>
+  </div>
+</div>
+{% block content %}{% endblock %}
+<div class="footer">
+  <p>IntelGraph Threat Intelligence Platform &mdash; Automated Report &mdash; {{ generated_at[:19] }}</p>
+</div>
+</body>
+</html>
