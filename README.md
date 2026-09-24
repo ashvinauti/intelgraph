@@ -193,6 +193,19 @@ uv run intelgraph pipeline run --base-url http://localhost:8000
 
 Use `--no-feed` to just see the extraction summary without updating the dashboard.
 
+To feed it synthetic/sample IOC data instead of (or alongside) live feeds — useful
+offline, for demos, or for testing entity extraction without touching real threat
+feeds — use `--file` with `--skip-urlhaus`:
+
+```bash
+uv run intelgraph pipeline run --skip-urlhaus --file samples/synthetic_iocs.txt
+```
+
+`samples/synthetic_iocs.txt` uses only RFC 5737 documentation IP ranges and
+`example.com`/`.org`/`.net` domains, so nothing in it resolves to real
+infrastructure — safe to run, inspect, or extend with your own fake IOCs.
+`--file` can be passed multiple times to combine several sources.
+
 ### Test
 
 ```bash

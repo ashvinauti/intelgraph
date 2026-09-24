@@ -59,6 +59,36 @@ class TestPipelineRun:
         assert payload["sources"]["URLhaus"]["iocs"] == 2
         assert "Done. Open http://localhost:9999/ to view the dashboard." in result.output
 
+    def test_skip_urlhaus_with_file_source(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("OTX_API_KEY", raising=False)
+        sample = tmp_path / "synthetic.txt"
+        sample.write_text("Malicious host at 203.0.113.44 (example.com) hosting invoice.exe")
+
+        with (
+            patch("intelgraph.cli.pipeline.httpx.get") as mock_get,
+            patch(
+                "intelgraph.cli.pipeline.httpx.post", return_value=_fake_feed_response()
+            ) as mock_post,
+        ):
+            runner = CliRunner()
+            result = runner.invoke(
+                pipeline_run, ["--skip-urlhaus", "--file", str(sample)]
+            )
+        assert result.exit_code == 0, result.output
+        mock_get.assert_not_called()
+        assert "Skipping URLhaus (--skip-urlhaus)" in result.output
+        assert f"Loaded 1 local file source(s): {sample}" in result.output
+        payload = mock_post.call_args.kwargs["json"]
+        assert "URLhaus" not in payload["sources"]
+        assert payload["sources"]["Files"]["count"] == 1
+
+    def test_no_sources_errors(self, monkeypatch):
+        monkeypatch.delenv("OTX_API_KEY", raising=False)
+        runner = CliRunner()
+        result = runner.invoke(pipeline_run, ["--skip-urlhaus"])
+        assert result.exit_code != 0
+        assert "No sources to run" in result.output
+
     def test_otx_included_when_key_set(self, monkeypatch):
         monkeypatch.setenv("OTX_API_KEY", "fake-key")
         fake_pulse = SimpleNamespace(

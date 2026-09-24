@@ -1,0 +1,27 @@
+# Synthetic threat-intel sample data for IntelGraph demos and testing.
+#
+# Every IP/domain below uses an address block reserved for documentation
+# (RFC 5737 / RFC 6761: 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24,
+# example.com/.org/.net) or a randomly generated hash — none of it resolves
+# to or identifies any real, currently active infrastructure. CVE IDs
+# reference real, publicly disclosed vulnerabilities (already fixed and
+# widely documented) purely so CVE-entity extraction has something to match.
+#
+# Feed it through the pipeline with:
+#   uv run intelgraph pipeline run --skip-urlhaus --file samples/synthetic_iocs.txt
+
+Incident report: a phishing campaign impersonating a shipping notification
+was observed dropping a payload from http://malicious-drop.example.com/invoice.exe
+hosted on 203.0.113.44. The same actor's infrastructure previously resolved
+to 198.51.100.7 (c2-panel.example.net) and 192.0.2.19.
+
+The dropped file (SHA256: 3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+communicates with a command-and-control endpoint at http://c2-relay.example.org:8443/beacon
+and has been associated with exploitation attempts against CVE-2021-44228 (Log4Shell)
+and CVE-2023-23397 in prior campaigns.
+
+A secondary sample (MD5: 44d88612fea8a8f36de82e1278abb02c) was staged at
+http://secondary-stage.example.com/update.bin, resolving through 203.0.113.101.
+Related phishing infrastructure used the domain login-verify.example.net
+(192.0.2.88) to harvest credentials before redirecting victims to
+http://payload-host.example.org/final.exe.

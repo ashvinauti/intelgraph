@@ -14,6 +14,7 @@ import csv
 import json
 import os
 from collections import Counter
+from pathlib import Path
 from typing import Any
 
 import click
@@ -39,6 +40,17 @@ def _fetch_urlhaus_source(limit: int) -> tuple[dict[str, Any], int]:
     text = "\n".join(urls)
     source = {"id": "urlhaus_recent", "name": f"URLhaus (recent {len(urls)})", "text": text, "value": 60}
     return source, len(urls)
+
+
+def _load_file_sources(paths: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Build pipeline source dicts from local text files (e.g. synthetic/sample IOC data)."""
+    sources = []
+    for path in paths:
+        text = Path(path).read_text()
+        sources.append(
+            {"id": f"file_{Path(path).stem}", "name": f"File: {Path(path).name}", "text": text, "value": 50}
+        )
+    return sources
 
 
 def _fetch_otx_sources(pulse_limit: int) -> tuple[list[dict[str, Any]], int]:
@@ -82,13 +94,38 @@ def _fetch_otx_sources(pulse_limit: int) -> tuple[list[dict[str, Any]], int]:
     default=False,
     help="Run the pipeline and print a summary without POSTing to the dashboard",
 )
+@click.option(
+    "--skip-urlhaus",
+    is_flag=True,
+    default=False,
+    help="Don't fetch the live URLhaus feed (useful offline, or when only using --file)",
+)
+@click.option(
+    "--file",
+    "files",
+    type=click.Path(exists=True, dir_okay=False),
+    multiple=True,
+    help="Local text file of sample/synthetic IOC data to include as a source "
+    "(repeatable). See samples/synthetic_iocs.txt for the expected format.",
+)
 @click.pass_context
 def pipeline_run(
-    ctx: click.Context, base_url: str, urlhaus_limit: int, otx_pulses: int, no_feed: bool
+    ctx: click.Context,
+    base_url: str,
+    urlhaus_limit: int,
+    otx_pulses: int,
+    no_feed: bool,
+    skip_urlhaus: bool,
+    files: tuple[str, ...],
 ) -> None:
-    click.echo("Fetching URLhaus (recent)...")
-    urlhaus_source, urlhaus_count = _fetch_urlhaus_source(urlhaus_limit)
-    click.echo(f"  {urlhaus_count} entries")
+    urlhaus_source = None
+    urlhaus_count = 0
+    if skip_urlhaus:
+        click.echo("Skipping URLhaus (--skip-urlhaus)")
+    else:
+        click.echo("Fetching URLhaus (recent)...")
+        urlhaus_source, urlhaus_count = _fetch_urlhaus_source(urlhaus_limit)
+        click.echo(f"  {urlhaus_count} entries")
 
     click.echo("Fetching OTX pulses...")
     otx_sources, otx_ioc_count = _fetch_otx_sources(otx_pulses)
@@ -97,7 +134,15 @@ def pipeline_run(
     else:
         click.echo("  skipped (OTX_API_KEY not set)")
 
-    sources = [urlhaus_source, *otx_sources]
+    file_sources = _load_file_sources(files)
+    if file_sources:
+        click.echo(f"Loaded {len(file_sources)} local file source(s): {', '.join(files)}")
+
+    sources = [s for s in (urlhaus_source,) if s] + otx_sources + file_sources
+    if not sources:
+        raise click.UsageError(
+            "No sources to run. Pass --file, unset --skip-urlhaus, or set OTX_API_KEY."
+        )
 
     click.echo("Running pipeline...")
     pipeline = Pipeline()
@@ -133,12 +178,17 @@ def pipeline_run(
     result_dict = result.to_dict()
     result_dict["source_texts"] = result.source_texts
 
+    source_summary: dict[str, Any] = {
+        "OTX": {"iocs": otx_ioc_count, "pulses": len(otx_sources)},
+    }
+    if urlhaus_source:
+        source_summary["URLhaus"] = {"iocs": urlhaus_count, "entities": len(result.extracted_entities)}
+    if file_sources:
+        source_summary["Files"] = {"count": len(file_sources), "paths": list(files)}
+
     payload = {
         "result": result_dict,
-        "sources": {
-            "URLhaus": {"iocs": urlhaus_count, "entities": len(result.extracted_entities)},
-            "OTX": {"iocs": otx_ioc_count, "pulses": len(otx_sources)},
-        },
+        "sources": source_summary,
         "ner_counts": dict(ner_labels),
         "ner_samples": ner_samples,
     }
