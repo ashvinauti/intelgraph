@@ -1373,7 +1373,9 @@ function renderGraph(rawNodes, rawEdges) {
   // Force layout. forceX/forceY pull every node gently toward the centre so
   // disconnected nodes settle into a compact cloud instead of being pushed
   // against the edges of the canvas; linked nodes cluster via forceLink.
-  const zoom = d3.zoom().scaleExtent([0.1, 6]).on('zoom', (e) => {
+  // Explicit extent: d3 otherwise measures the SVG, which is 0x0 while the
+  // Graph tab is hidden and turns the zoom-to-fit transition into NaN.
+  const zoom = d3.zoom().extent([[0, 0], [w, h]]).scaleExtent([0.1, 6]).on('zoom', (e) => {
     graphGroup.attr('transform', e.transform);
     applyLabelVisibility(e.transform.k);
   });
@@ -1381,7 +1383,10 @@ function renderGraph(rawNodes, rawEdges) {
   const graphGroup = svg.append('g').attr('class', 'graph-content');
 
   const many = nodes.length > 60;
-  const sim = d3.forceSimulation(nodes)
+  // Stop the previous render's simulation so it does not keep ticking (and
+  // fire its own zoom-to-fit) after the filter buttons re-render the graph.
+  if (window._graphSim) window._graphSim.stop();
+  const sim = window._graphSim = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id(d => d.node_id).distance(many ? 45 : 80).strength(0.5))
     .force('charge', d3.forceManyBody().strength(many ? -25 : -180))
     .force('collide', d3.forceCollide(many ? 12 : 22))
@@ -1433,6 +1438,7 @@ function renderGraph(rawNodes, rawEdges) {
     const x0 = Math.min(...xs) - 30, x1 = Math.max(...xs) + 30;
     const y0 = Math.min(...ys) - 30, y1 = Math.max(...ys) + 30;
     const k = Math.min(3, 0.95 * Math.min(w / (x1 - x0), h / (y1 - y0)));
+    if (![x0, x1, y0, y1, k].every(Number.isFinite)) return;
     const t = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
     svg.transition().duration(500).call(zoom.transform, t);
   });
