@@ -17,6 +17,7 @@ from intelgraph.cli.prediction import prediction_group
 from intelgraph.cli.reasoning import reasoning_group
 from intelgraph.cli.report import report_group
 from intelgraph.cli.review import review_group
+from intelgraph.cli.simulate import simulate_group
 from intelgraph.cli.source import source_group
 from intelgraph.cli.task import task_group
 from intelgraph.cli.ucos import ucos_group
@@ -94,6 +95,7 @@ main.add_command(agent_group)
 main.add_command(metaintel_group)
 main.add_command(ucos_group)
 main.add_command(pipeline_group)
+main.add_command(simulate_group)
 
 
 if __name__ == "__main__":

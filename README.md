@@ -158,9 +158,19 @@ uv run intelgraph pipeline run
 # Offline / demo: synthetic IOCs only (RFC 5737 IPs and example.* domains, safe to use)
 uv run intelgraph pipeline run --skip-urlhaus --file samples/synthetic_iocs.txt
 
+# Larger synthetic datasets on demand: multiple linked campaigns, tunable, seeded
+uv run intelgraph simulate network --seed 42 --campaigns 8 --overlap 0.5 --feed
+
 # A URLhaus CSV you downloaded from https://urlhaus.abuse.ch/downloads/csv_recent/
 uv run intelgraph pipeline run --urlhaus-csv path/to/urlhaus_recent.csv
 ```
+
+The network simulator generates richly-connected synthetic campaigns
+(shared-infrastructure pivots, malware hashes, exploited CVEs) using only
+reserved/documentation address space. See
+[`docs/malicious-network-simulation.md`](docs/malicious-network-simulation.md)
+for the full option list, the safety model, and how to feed a deployment
+running on AWS/EKS.
 
 Useful flags:
 - `--no-feed`: print the extraction summary without updating the dashboard
