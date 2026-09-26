@@ -40,7 +40,7 @@ def _entity_to_dict(entity: BaseEntity) -> dict[str, Any]:
         "subject",
         "fingerprint",
         "category",
-        "version",
+        "product_version",
         "cpe",
         "email_addresses",
         "usernames",
@@ -118,7 +118,11 @@ def _dict_to_entity(data: dict[str, Any], entity_type: str) -> BaseEntity:
             kwargs[key] = datetime.fromisoformat(val)
         elif key == "id":
             kwargs[key] = val
-        elif key in ("version", "confidence_score", "trust_score"):
+        elif key == "version":
+            # Rows written before Technology.version was renamed to
+            # product_version may hold a string here; fall back to revision 1.
+            kwargs[key] = val if isinstance(val, int) else 1
+        elif key in ("confidence_score", "trust_score"):
             kwargs[key] = val
         elif key == "entity_type":
             continue

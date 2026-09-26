@@ -78,7 +78,7 @@ class EconomicGovernor:
             cost *= 2.0
         value = (
             text_length * 0.001
-            if "critical" in text_length or "cve" in str(text_length).lower()
+            if complexity in ("high", "critical")
             else text_length * 0.0005
         )
         roi = self.compute_roi(f"analysis_{time.time()}", value, cost)

@@ -8,5 +8,7 @@ class Technology(BaseEntity):
     entity_type: EntityType = field(default=EntityType.TECHNOLOGY, init=False)
     name: str = ""
     category: str = ""
-    version: str = ""
+    # Software/product version. Named product_version so it does not shadow
+    # BaseEntity.version, the integer record revision.
+    product_version: str = ""
     cpe: str = ""

@@ -192,7 +192,7 @@ def enrich_ioc(
     try:
         from intelgraph.core.scoring.threat_score import ThreatScorer
 
-        scorer = ThreatScorer(graph)
+        scorer = ThreatScorer()
         threat_score = scorer.score(matched_node, graph)
     except Exception:
         threat_score = None

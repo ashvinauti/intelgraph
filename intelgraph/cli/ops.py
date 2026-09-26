@@ -62,7 +62,7 @@ def ops_backup(obj: dict, label: str) -> None:
     if not result.success:
         logger.error("backup failed: %s", result.error)
         sys.exit(1)
-    logger.info("backup created", path=result.path, size=result.size_bytes)
+    logger.info("backup created: path=%s size=%s", result.path, result.size_bytes)
 
 
 @ops_group.command(name="rotate-logs", help="Trigger log rotation")
@@ -86,4 +86,4 @@ def ops_rotate_logs(obj: dict) -> None:
     if rotated == 0:
         logger.warning("no RotatingFileHandler found, nothing to rotate")
     else:
-        logger.info("log rotation complete", handlers=rotated)
+        logger.info("log rotation complete: handlers=%d", rotated)

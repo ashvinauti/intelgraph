@@ -97,7 +97,7 @@ class DashboardState:
                 return r
             self._load(tenant_id)
             return self._tenant_results.get(tenant_id)
-        return self.results.get("")
+        return self._results.get("")
 
     @property
     def result(self) -> dict[str, Any] | None:
@@ -374,13 +374,13 @@ def get_graph(request: Request, limit: int = 200, since: str | None = None) -> d
     if since:
         from datetime import datetime, timedelta
         
-        if since.endswith("d"):
+        cutoff: datetime | None
+        if since.endswith("d") and since[:-1].isdigit():
             cutoff = datetime.now(UTC) - timedelta(days=int(since[:-1]))
         else:
-            try:
-                cutoff = datetime.fromisoformat(since)
-            except ValueError:
-                cutoff = None
+            # _parse_iso normalises naive timestamps to UTC so the comparison
+            # below never mixes naive and aware datetimes.
+            cutoff = _parse_iso(since)
         if cutoff:
             nodes = [
                 n
