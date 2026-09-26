@@ -50,3 +50,25 @@ aws ssm start-session --target <analytics_instance_id> \
 ```
 
 See each layer's README for details and teardown.
+
+## One-command demo (Windows PowerShell)
+
+For a hands-off demo, the scripts in this folder do everything end to end:
+
+```powershell
+# Bring the whole lab up: both layers, build+push image, feed data, open the UI.
+# Run it ~20 min before the demo so it's warm. Idempotent; safe to re-run.
+.\demo-up.ps1                      # or: .\demo-up.ps1 -Region eu-west-2 -Campaigns 10
+.\demo-up.ps1 -SkipBuild           # reuse an image already in ECR (faster)
+
+# During the demo: push more synthetic campaigns to show live ingestion.
+.\demo-feed.ps1                    # refresh the dashboard afterwards
+
+# After the demo: tear everything down to stop billing.
+.\demo-down.ps1                    # add -DeleteImage to also remove the ECR repo
+```
+
+Prereqs (install once, then reopen PowerShell): `terraform`, `aws` CLI,
+Docker Desktop (running), and the AWS Session Manager plugin, with credentials
+configured via `aws configure`. `demo-up.ps1` checks all of these before it
+starts and prints the dashboard URL when ready.
