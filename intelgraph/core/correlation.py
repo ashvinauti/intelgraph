@@ -24,6 +24,7 @@ class CorrelationID:
         finally:
             _correlation_id.reset(token)
 
+    @staticmethod
     def get_current() -> str:
         return _correlation_id.get()
 

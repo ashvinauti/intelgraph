@@ -8,7 +8,7 @@ class CacheManager:
     def __init__(self, backend: Any, default_ttl: int = 300) -> None:
         self._backend = backend
         self._default_ttl = default_ttl
-        self._memory: dict[str, tuple[object, float | None]] = {}
+        self._memory: dict[str, tuple[object, str | None]] = {}
         self._lock = threading.Lock()
         self._hit_count = 0
         self._miss_count = 0
