@@ -1370,98 +1370,72 @@ function renderGraph(rawNodes, rawEdges) {
 
   console.log('[graph] valid links after filter:', links.length);
 
-  // Find connected components
-  const adj = new Map();
-  nodes.forEach(n => adj.set(n.node_id, []));
-  links.forEach(l => {
-    adj.get(l.source).push(l.target);
-    adj.get(l.target).push(l.source);
-  });
-  const visited = new Set();
-  const components = [];
-  for (const n of nodes) {
-    if (visited.has(n.node_id)) continue;
-    const comp = [];
-    const stack = [n.node_id];
-    while (stack.length) {
-      const id = stack.pop();
-      if (visited.has(id)) continue;
-      visited.add(id);
-      comp.push(id);
-      for (const nb of adj.get(id) || []) {
-        if (!visited.has(nb)) stack.push(nb);
-      }
-    }
-    components.push(comp);
-  }
-  // Sort components: largest first
-  components.sort((a, b) => b.length - a.length);
-
-  // Assign positions: each component in its own region
-  const padding = 60;
-  const cellW = Math.max(200, (w - padding) / Math.min(components.length, 4));
-  const cellH = h - padding;
-  const positions = {};
-  components.forEach((comp, ci) => {
-    const cx = padding / 2 + (ci % 4) * cellW + cellW / 2;
-    const cy = h / 2;
-    const spread = Math.min(cellW, cellH) * 0.3;
-    if (comp.length === 1) {
-      positions[comp[0]] = { x: cx, y: cy + (ci >= 4 ? 0 : 0) };
-      return;
-    }
-    const angleStep = (2 * Math.PI) / comp.length;
-    comp.forEach((id, i) => {
-      positions[id] = { x: cx + spread * Math.cos(angleStep * i), y: cy + spread * Math.sin(angleStep * i) };
-    });
-  });
-  nodes.forEach(n => {
-    if (positions[n.node_id]) {
-      n.fx = positions[n.node_id].x;
-      n.fy = positions[n.node_id].y;
-    }
-  });
-
-  // Zoom
-  const zoom = d3.zoom().scaleExtent([0.15, 5]).on('zoom', (e) => {
+  // Force layout. forceX/forceY pull every node gently toward the centre so
+  // disconnected nodes settle into a compact cloud instead of being pushed
+  // against the edges of the canvas; linked nodes cluster via forceLink.
+  const zoom = d3.zoom().scaleExtent([0.1, 6]).on('zoom', (e) => {
     graphGroup.attr('transform', e.transform);
+    applyLabelVisibility(e.transform.k);
   });
   svg.call(zoom);
   const graphGroup = svg.append('g').attr('class', 'graph-content');
 
+  const many = nodes.length > 60;
   const sim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.node_id).distance(40).strength(0.1))
-    .force('charge', d3.forceManyBody().strength(-30))
-    .force('collide', d3.forceCollide(14))
-    .alphaDecay(0.05);
+    .force('link', d3.forceLink(links).id(d => d.node_id).distance(many ? 45 : 80).strength(0.5))
+    .force('charge', d3.forceManyBody().strength(many ? -25 : -180))
+    .force('collide', d3.forceCollide(many ? 12 : 22))
+    .force('x', d3.forceX(w / 2).strength(0.06))
+    .force('y', d3.forceY(h / 2).strength(0.06))
+    .alphaDecay(0.04);
 
+  const nodeRadius = d => Math.max(4, Math.min(10, 3 + Math.sqrt(d.evidence_count || 0) * 2));
   const link = graphGroup.append('g').selectAll('line').data(links).join('line').attr('class', 'graph-link');
   const edgeLabel = graphGroup.append('g').selectAll('text').data(links).join('text').attr('class', 'graph-link-label').text(d => d.type).attr('font-size', 7).attr('fill', '#484f58');
   const node = graphGroup.append('g').selectAll('circle').data(nodes).join('circle')
-    .attr('r', d => Math.max(4, Math.min(10, 3 + Math.sqrt(d.evidence_count || 0) * 2)))
+    .attr('r', nodeRadius)
     .attr('fill', d => threatScoreGradient(d.threat_score)).attr('class', 'graph-node')
     .attr('stroke', '#0d1117').attr('stroke-width', 1.5)
     .on('mouseover', (e, d) => {
-      tooltip.style('opacity', 1).html(`<div class="tt-label">Entity</div><div class="tt-value">${d.entity_identifier || d.node_id}</div><div class="tt-label">Type</div><div class="tt-value">${d.entity_type}</div><div class="tt-label">Confidence</div><div class="tt-value">${d.confidence}%</div><div class="tt-label">Threat Score</div><div class="tt-value" style="color:${threatScoreGradient(d.threat_score)}">${Math.round(d.threat_score || 0)}</div>`).style('left', (e.pageX + 12) + 'px').style('top', (e.pageY - 10) + 'px');
+      tooltip.style('opacity', 1).html(`<div class="tt-label">Entity</div><div class="tt-value">${escapeHtml(d.entity_identifier || d.node_id)}</div><div class="tt-label">Type</div><div class="tt-value">${escapeHtml(d.entity_type)}</div><div class="tt-label">Confidence</div><div class="tt-value">${d.confidence}%</div><div class="tt-label">Threat Score</div><div class="tt-value" style="color:${threatScoreGradient(d.threat_score)}">${Math.round(d.threat_score || 0)}</div>`).style('left', (e.pageX + 12) + 'px').style('top', (e.pageY - 10) + 'px');
       d3.select(e.target).attr('stroke', '#f0f6fc').attr('stroke-width', 2.5);
     })
     .on('mouseout', (e) => { tooltip.style('opacity', 0); d3.select(e.target).attr('stroke', '#0d1117').attr('stroke-width', 1.5); })
-    .call(d3.drag().on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }).on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; }).on('end', (e, d) => { d.fx = null; d.fy = null; }));
+    .call(d3.drag().on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }).on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; }).on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
   const nodeLabel = graphGroup.append('g').selectAll('text').data(nodes).join('text')
-    .text(d => (d.entity_identifier || d.node_id).length > 10 ? (d.entity_identifier || d.node_id).slice(0, 8) + '…' : d.entity_identifier || d.node_id)
+    .text(d => (d.entity_identifier || d.node_id).length > 18 ? (d.entity_identifier || d.node_id).slice(0, 16) + '…' : d.entity_identifier || d.node_id)
     .attr('font-size', 7).attr('fill', '#8b949e').attr('text-anchor', 'middle')
-    .attr('dy', d => Math.max(4, Math.min(10, 3 + Math.sqrt(d.evidence_count || 0) * 2)) + 10)
+    .attr('dy', d => nodeRadius(d) + 10)
     .attr('pointer-events', 'none').style('font-family', 'SFMono-Regular, Consolas, monospace');
 
-  // De-pin after a short delay so nodes settle near their component center
-  setTimeout(() => { nodes.forEach(n => { n.fx = null; n.fy = null; }); }, 500);
+  // Labels overlap into noise when zoomed out: node labels appear on large
+  // graphs once zoomed in, relationship labels only at closer zoom.
+  function applyLabelVisibility(k) {
+    nodeLabel.style('display', !many || k >= 1.6 ? null : 'none');
+    edgeLabel.style('display', k >= 2 ? null : 'none');
+  }
+  applyLabelVisibility(1);
+
   sim.on('tick', () => {
     link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y);
     edgeLabel.attr('x', d => (d.source.x + d.target.x) / 2).attr('y', d => (d.source.y + d.target.y) / 2 - 4);
-    node.attr('cx', d => d.x = Math.max(10, Math.min(w - 10, d.x))).attr('cy', d => d.y = Math.max(10, Math.min(h - 10, d.y)));
+    node.attr('cx', d => d.x).attr('cy', d => d.y);
     nodeLabel.attr('x', d => d.x).attr('y', d => d.y);
   });
 
+  // Zoom to fit once the layout has settled (first time only, so it does not
+  // fight the user after they drag a node).
+  let fitted = false;
+  sim.on('end', () => {
+    if (fitted || !nodes.length) return;
+    fitted = true;
+    const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+    const x0 = Math.min(...xs) - 30, x1 = Math.max(...xs) + 30;
+    const y0 = Math.min(...ys) - 30, y1 = Math.max(...ys) + 30;
+    const k = Math.min(3, 0.95 * Math.min(w / (x1 - x0), h / (y1 - y0)));
+    const t = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+    svg.transition().duration(500).call(zoom.transform, t);
+  });
   // Legend for threat score colors
   const legendItems = [
     { color: '#3fb950', label: '< 25' },
