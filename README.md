@@ -1,129 +1,98 @@
 # IntelGraph
 
-> IntelGraph is an **open-source threat intelligence platform** that helps SOC analysts and incident responders investigate threats by correlating indicators across multiple intelligence sources and explaining every alert with an evidence-based reasoning chain.
+> An **open-source threat intelligence platform** that correlates indicators of compromise (IOCs) from multiple sources in a knowledge graph and explains every alert with an evidence-based reasoning chain.
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 1,580+](https://img.shields.io/badge/Tests-1580%2B-brightgreen.svg)](#testing)
+[![Tests: 1,600+](https://img.shields.io/badge/Tests-1600%2B-brightgreen.svg)](#-testing)
 [![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)](#)
 
-> This repository is based on the original [IntelGraph](https://github.com/Berkayy123-h/intelgraph) project by Berkay Altıntaş (MIT licensed). See [CHANGELOG.md](CHANGELOG.md) for what's new in this fork.
+**Maintained by [Ashvin Auti](https://github.com/ashvinauti)** · **Originally created by [Berkay Altıntaş](https://github.com/Berkayy123-h)**
 
 ---
 
-## Built With
+## 👥 Authors & Credits
 
-✔ **1,580+** automated tests
-✔ **3** live CTI source clients (OTX, Shodan, VirusTotal) + URLhaus CSV import
-✔ **STIX 2.1** export compatible
-✔ **Knowledge Graph** engine with temporal tracking (in-memory)
-✔ **Real-time** enrichment & correlation  
+| Role | Person | Links |
+|------|--------|-------|
+| **Original author & creator** | **Berkay Altıntaş** | [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph) |
+| **Fork maintainer** | **Ashvin Auti** | [ashvinauti/intelgraph](https://github.com/ashvinauti/intelgraph) |
+
+IntelGraph was designed and built by **Berkay Altıntaş**. The core architecture, knowledge-graph engine, evidence-chain model, NLP pipeline and most of the codebase are their work, released under the MIT License. Full credit for the original project goes to them. Please star and support the [original repository](https://github.com/Berkayy123-h/intelgraph).
+
+This repository is a fork maintained by **Ashvin Auti**. It builds on the original with:
+
+- **GraphQL API** (`/graphql`) with a GraphiQL IDE, alongside the REST API
+- **Kubernetes Helm chart** in [`deploy/helm/intelgraph`](./deploy/helm/intelgraph)
+- **`intelgraph pipeline run`** command to populate the dashboard from live URLhaus/OTX feeds, a local URLhaus CSV, or synthetic sample data
+- **SOC integrations**: IOC enrichment endpoint and STIX 2.1 bundle export
+- **Bug fixes**: dashboard date-filter crashes, enrichment threat score always returning `null`, Technology entity updates failing, `intelgraph ops backup` crashing after a successful backup, and more, with regression tests
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full list of changes in this fork.
 
 ---
 
-## Use Cases
+## 🎯 Use Cases
 
-- **Investigate threats** - Suspicious IPs, domains, URLs, hashes, and CVEs from multiple intelligence sources
-- **Correlate indicators** - Link related IOCs into an interactive knowledge graph
-- **Reduce false positives** - Validate indicators across multiple trusted sources
-- **Support investigations** - Explainable evidence chains for every alert
-- **Share intelligence** - Export investigations as STIX 2.1 bundles for MISP, OpenCTI, or other platforms
+- **Investigate threats**: look up suspicious IPs, domains, URLs, hashes and CVEs across multiple intelligence sources
+- **Correlate indicators**: link related IOCs into an interactive knowledge graph
+- **Reduce false positives**: validate indicators against multiple trusted sources
+- **Explain alerts**: every alert comes with an evidence chain showing *why* it fired
+- **Share intelligence**: export as STIX 2.1 bundles for MISP, OpenCTI or other platforms
 
 ---
 
-## Why IntelGraph?
+## 💡 Why IntelGraph?
 
-Unlike traditional threat intelligence platforms that only aggregate indicators, **IntelGraph explains WHY an IOC is malicious**.
+Most threat intelligence platforms aggregate indicators. **IntelGraph also explains why an IOC is considered malicious.**
 
 | Feature | Description |
 |---------|-------------|
-| 🔗 **Multi-source Correlation** | Correlates data from multiple threat sources |
-| 📋 **Evidence Chains** | Tracks provenance and reasoning |
-| 📊 **Knowledge Graph** | Visualizes threat relationships |
-| 🚨 **Contradiction Detection** | Identifies conflicting intelligence |
-| 📤 **STIX Export** | Standards-compliant sharing |
+| 🔗 **Multi-source correlation** | Correlates data from multiple threat sources |
+| 📋 **Evidence chains** | Tracks provenance and reasoning for every conclusion |
+| 📊 **Knowledge graph** | Visualizes relationships between threats |
+| 🚨 **Contradiction detection** | Flags conflicting intelligence between sources |
+| 📤 **STIX 2.1 export** | Standards-compliant intelligence sharing |
 
-### Positioning
-
-IntelGraph complements existing CTI platforms by focusing on:
-
-- **Explainable intelligence** - See why an indicator is malicious
-- **Evidence-driven correlation** - Track the reasoning chain
-- **Knowledge graph analysis** - Visualize threat relationships
-- **Automated enrichment workflows** - Real-time data integration
-
-**Compared with:**
-- **OpenCTI** - Extensive CTI management platform
-- **MISP** - Collaborative IOC sharing platform  
-- **Commercial TIPs** - Enterprise intelligence suites
+IntelGraph is meant to **complement** platforms like OpenCTI, MISP and commercial TIPs by focusing on explainable, evidence-driven correlation.
 
 ---
 
 ## 📸 Screenshots
 
-### Pipeline Dashboard
-
 ![IntelGraph Pipeline Dashboard](screenshots/dashboard.jpg)
 
-*IntelGraph Pipeline Dashboard — 131 nodes, 219 entities, live threat correlation*
+*Pipeline dashboard: knowledge graph with live threat correlation*
 
 ---
 
-## ✨ Core Features
+## ✨ Features
 
-### 📊 Multi-Source Pipeline
-```
-Active CTI source clients (REST APIs):
-- OTX             # AlienVault community intelligence
-- Shodan          # Internet-connected device data
-- VirusTotal      # File / URL / domain reputation
+### Data sources
+- **OTX** (AlienVault community intelligence), API client
+- **Shodan** (internet-connected device data), API client
+- **VirusTotal** (file / URL / domain reputation), API client
+- **URLhaus** (malicious URL feed), live fetch or CSV import
+- *Planned:* CISA KEV (known exploited vulnerabilities)
 
-CSV import:
-- URLhaus         # Malicious URL feed (read from CSV)
+### Entity processing
+- Custom NER that extracts IOCs from raw text
+- Hash-index deduplication
+- Evidence-based confidence and threat scoring (0–100)
+- Contradiction detection
 
-Planned (not yet implemented):
-- CISA KEV        # Known exploited vulnerabilities
-```
+### Knowledge graph
+- Temporal tracking of threat evolution
+- Attack-path analysis, anomaly detection, influence and reasoning engines
+- Relationship mapping and export (JSON, STIX 2.1)
 
-### 🧠 Entity Processing
-- **Custom NER** - Extracts threats from raw text
-- **Deduplication** - O(n) hash-index matching
-- **Confidence Scoring** - Evidence-based reliability
-- **Contradiction Detection** - Conflicting intelligence alerts
+### APIs & dashboard
+- REST API (FastAPI) with interactive docs at `/docs`
+- GraphQL API with GraphiQL at `/graphql`
+- Single-page dashboard with a D3.js force graph and live updates (SSE)
 
-### 📈 Temporal Knowledge Graph
-- Timeline tracking of threat evolution
-- Attack path visualization
-- Relationship mapping
-- Historical trend analysis
-
-### ⚡ Real-Time Enrichment
-```python
-POST /api/v1/enrichment/ip
-{"ip": "192.0.2.1"}
-# Returns: Shodan data + reputation + CVEs
-```
-
-### 🔗 GraphQL API
-```
-POST /graphql   # entities, relationships, search — queries and mutations
-```
-An interactive GraphiQL IDE is served at the same path. See `intelgraph/api/graphql_schema.py`.
-
-### 🤖 Automated Playbooks
-- Event-driven response rules
-- Alert enrichment workflows
-- Webhook integration
-- Custom automation framework
-
-### 📱 Real-Time Dashboard
-- D3.js force graph visualization
-- Live data streaming (SSE)
-- Full-text search
-- Interactive threat correlation
-
-### 🔐 Security Features
-- JWT authentication
+### Security
+- JWT authentication, optional 2FA, API keys
 - Role-based access control
 - Sliding-window rate limiting
 - Audit logging
@@ -134,26 +103,31 @@ An interactive GraphiQL IDE is served at the same path. See `intelgraph/api/grap
 
 ### Prerequisites
 - Python 3.11+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - SQLite (default) or PostgreSQL
 
-### Installation
+### Install
 
 ```bash
 git clone https://github.com/ashvinauti/intelgraph.git
 cd intelgraph
-
 uv sync
 cp .env.example .env
 ```
 
-### Configuration
+### Configure
 
-Edit `.env`:
+Edit `.env` (see `.env.example` for every option). The main settings:
+
 ```env
-DATABASE_URL=postgresql://user:pass@localhost/intelgraph
-JWT_SECRET_KEY=your-secret-key
-SHODAN_API_KEY=your-key
-VIRUSTOTAL_API_KEY=your-key
+INTELGRAPH_SECRET_KEY=a-random-secret-at-least-32-chars   # required
+INTELGRAPH_DB_PATH=intelgraph.db                          # SQLite (default)
+# DATABASE_URL=postgresql://user:pass@localhost:5432/intelgraph
+
+# Optional: leave empty to disable that source
+OTX_API_KEY=
+VIRUSTOTAL_API_KEY=
+SHODAN_API_KEY=
 ```
 
 ### Run
@@ -161,7 +135,7 @@ VIRUSTOTAL_API_KEY=your-key
 ```bash
 # Local development
 uv run uvicorn intelgraph.api.main:app --reload
-# Open http://localhost:8000
+# Dashboard: http://localhost:8000   API docs: http://localhost:8000/docs
 
 # Docker
 docker build -t intelgraph .
@@ -173,251 +147,204 @@ helm install intelgraph ./deploy/helm/intelgraph \
   --set secrets.INTELGRAPH_SECRET_KEY=$(openssl rand -hex 32)
 ```
 
-### Populate the dashboard with live data
+### Populate the dashboard
 
-A fresh install starts with an empty knowledge graph, so the Dashboard/Graph views show
-zeros until you run the pipeline at least once. With the server running:
+A fresh install starts with an empty graph. With the server running:
 
 ```bash
+# Live URLhaus feed (no API key needed); also uses OTX if OTX_API_KEY is set
 uv run intelgraph pipeline run
-```
 
-This pulls the live URLhaus "recent" feed (no API key needed), runs it through the
-NLP/entity-extraction/graph pipeline, and feeds the result to the running server's
-dashboard. Set `OTX_API_KEY` first to also include OTX pulses:
-
-```bash
-export OTX_API_KEY=your-otx-key   # optional
-uv run intelgraph pipeline run --base-url http://localhost:8000
-```
-
-Use `--no-feed` to just see the extraction summary without updating the dashboard.
-
-To feed it synthetic/sample IOC data instead of (or alongside) live feeds — useful
-offline, for demos, or for testing entity extraction without touching real threat
-feeds — use `--file` with `--skip-urlhaus`:
-
-```bash
+# Offline / demo: synthetic IOCs only (RFC 5737 IPs and example.* domains, safe to use)
 uv run intelgraph pipeline run --skip-urlhaus --file samples/synthetic_iocs.txt
-```
 
-`samples/synthetic_iocs.txt` uses only RFC 5737 documentation IP ranges and
-`example.com`/`.org`/`.net` domains, so nothing in it resolves to real
-infrastructure — safe to run, inspect, or extend with your own fake IOCs.
-`--file` can be passed multiple times to combine several sources.
-
-If you've manually downloaded a URLhaus CSV (e.g. from a browser, or for offline use)
-instead of letting the command fetch it live, point `--urlhaus-csv` at it:
-
-```bash
+# A URLhaus CSV you downloaded from https://urlhaus.abuse.ch/downloads/csv_recent/
 uv run intelgraph pipeline run --urlhaus-csv path/to/urlhaus_recent.csv
 ```
 
-It must be in URLhaus's own `csv_recent` format (the file downloaded from
-https://urlhaus.abuse.ch/downloads/csv_recent/) — `--urlhaus-csv` parses that format
-specifically, pulling out the URL column, unlike `--file` which treats its input as
-plain text. `--urlhaus-csv` and `--skip-urlhaus` are mutually exclusive.
+Useful flags:
+- `--no-feed`: print the extraction summary without updating the dashboard
+- `--base-url`: point at a server that isn't on `http://localhost:8000`
+- `--file`: may be passed several times to combine sources
 
-### Test
+`--urlhaus-csv` and `--skip-urlhaus` cannot be used together.
+
+---
+
+## 🔌 API Examples
+
+Get a token first:
 
 ```bash
-uv run pytest tests/ -v --cov=intelgraph
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "analyst", "password": "change-me-123", "role": "admin"}'
+# → {"access_token": "...", ...}
+
+export TOKEN=<access_token>
 ```
+
+**Enrich an indicator** (`ioc_type` is one of `ip_address`, `domain`, `cve`, `url`, `hash`):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/enrichment/ip_address/192.0.2.1
+# → entity details, related entities, confidence/trust and threat_score
+```
+
+**Search the graph:**
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:8000/search?q=ransomware"
+```
+
+**Create an entity:**
+
+```bash
+curl -X POST http://localhost:8000/entities \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"entity_type": "ipaddress", "attributes": {"ip": "192.0.2.1", "confidence_score": 80}}'
+```
+
+**Export as STIX 2.1** (optionally only data since a timestamp):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8000/export/stix?since=2026-01-01T00:00:00Z"
+```
+
+**Dashboard graph data** (`since` accepts an ISO date or a relative value like `7d`):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:8000/dashboard/graph?since=7d"
+```
+
+See `http://localhost:8000/docs` for the full endpoint list.
+
+---
+
+## 🖥️ CLI
+
+The `intelgraph` command groups include:
+
+| Command | Purpose |
+|---------|---------|
+| `pipeline` | Run the collection → NLP → graph pipeline |
+| `collect`, `source`, `datasources` | Manage and collect from intelligence sources |
+| `graph`, `attack-path`, `anomaly` | Query and analyze the knowledge graph |
+| `evidence`, `verify`, `review` | Evidence chains, verification, human review |
+| `nlp`, `reasoning`, `prediction` | Extraction, causal reasoning, forecasting |
+| `report` | Generate investigation reports |
+| `ops` | Health, metrics, backup, log rotation |
+
+Run `uv run intelgraph --help` or `uv run intelgraph <command> --help` for details.
 
 ---
 
 ## 📊 Architecture
 
 ```
-Threat Feeds (3 API clients + URLhaus CSV)
-       │
-       ▼
-   Collectors
-       │
-       ▼
-  Normalization
-       │
-       ▼
- Knowledge Graph
-       │
-   ┌───┴────┐
-   ▼        ▼
-Alerts  Investigation
-   │        │
-   └────┬───┘
+Threat feeds (OTX, Shodan, VirusTotal, URLhaus)
+        │
         ▼
-  STIX/TAXII Export
+    Collectors
+        │
+        ▼
+  NLP & normalization
+        │
+        ▼
+  Knowledge graph ──► Evidence chains & scoring
+        │
+   ┌────┴─────┐
+   ▼          ▼
+ Alerts   Investigations
+   │          │
+   └────┬─────┘
+        ▼
+REST / GraphQL / STIX export
 ```
 
-**Project Structure:**
 ```
 intelgraph/
-├── api/                  # FastAPI app, routers, auth, middleware
-│   └── routers/          # REST endpoints (dashboard, metrics, export, etc.)
-├── cli/                  # Click commands (18 subcommands)
-├── core/                 # Core engine
-│   ├── collection/        # Collector framework (HTTP, RSS, file, API)
-│   ├── entity/           # Entity models (IP, domain, CVE, person, etc.)
-│   ├── evidence_chain/   # Evidence construction & confidence scoring
-│   ├── export/           # STIX 2.1 export
-│   ├── graph/            # In-memory knowledge graph + algorithms
-│   ├── multitenant/       # Tenant isolation & API key management
-│   ├── notification/     # Webhook, email, Slack dispatch
-│   ├── pipeline/         # Multi-phase pipeline engine
-│   ├── playbook/         # Rule-based response engine
-│   ├── reporting/        # Jinja2 HTML report generation
-│   ├── scoring/          # Threat scoring (5-component, 0-100)
-│   ├── source/           # CTI source clients (OTX, Shodan, VirusTotal)
-│   └── storage/          # SQLite + PostgreSQL backends
-├── web/                  # Dashboard HTML (single-page app)
-└── output/               # Output formatters (JSON, HTML, Markdown)
+├── api/            # FastAPI app, routers, auth, middleware, GraphQL schema
+├── cli/            # Click commands
+├── core/
+│   ├── collection/     # Collector framework (HTTP, RSS, file, API)
+│   ├── entity/         # Entity models (IP, domain, CVE, technology, …)
+│   ├── evidence_chain/ # Evidence construction & confidence scoring
+│   ├── export/         # STIX 2.1 export
+│   ├── graph/          # In-memory knowledge graph + algorithms
+│   ├── notification/   # Webhook, email, Slack dispatch
+│   ├── pipeline/       # Multi-phase pipeline engine
+│   ├── playbook/       # Rule-based response engine
+│   ├── scoring/        # Threat scoring (0–100)
+│   ├── source/         # CTI source clients
+│   └── storage/        # SQLite + PostgreSQL backends
+├── web/            # Dashboard (single-page app)
+└── output/         # JSON, HTML, Markdown formatters
 
-tests/                   # 1,580+ tests
-docs/                    # Landing page + deployment config
+tests/              # 1,600+ tests
+deploy/helm/        # Kubernetes Helm chart
+samples/            # Synthetic IOC sample data
 ```
 
----
-
-## 🔌 API Examples
-
-### Search Threats
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8000/api/v1/threats/search?q=ransomware"
-```
-
-### Enrich IP Address
-```bash
-curl -X POST http://localhost:8000/api/v1/enrichment/ip \
-  -H "Content-Type: application/json" \
-  -d '{"ip": "192.0.2.1"}'
-
-# Response:
-# {
-#   "ip": "192.0.2.1",
-#   "shodan": {...},
-#   "reputation": "malicious",
-#   "cves": [...]
-# }
-```
-
-### Export as STIX
-```bash
-curl http://localhost:8000/api/v1/export/stix?threat_id=threat_123
-# Returns STIX 2.1 formatted JSON
-```
-
-### Knowledge Graph
-```bash
-curl http://localhost:8000/api/v1/graph/relationships?entity_id=malware_456
-# Returns: Related entities, attack paths, timeline
-```
+More detail: [Architecture.md](./Architecture.md).
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-uv run pytest tests/ -v
+# All tests
+uv run pytest -q
 
-# With coverage
-uv run pytest tests/ --cov=intelgraph --cov-report=html
+# With coverage report
+uv run pytest --cov=intelgraph --cov-report=html
 
-# Specific module
-uv run pytest tests/test_pipeline.py -v
+# A single file
+uv run pytest tests/cli/test_pipeline.py -v
 ```
-
-**Coverage Target**: 100%  
-**Current**: 95%+  
-**Total Tests**: 1,580+
 
 ---
 
 ## 📚 Documentation
 
-- **[Architecture](./Architecture.md)** - System design & components
-- **[Deployment](./deploy/helm/intelgraph/README.md)** - Docker and Kubernetes (Helm) deployment
-- **[API Reference](./README.md#-api-examples)** - Endpoint documentation
-- **[Contributing](./CONTRIBUTING.md)** - Development guide
-- **[Security Policy](./SECURITY.md)** - Responsible disclosure
-
----
-
-## 🛣️ Roadmap
-
-### v1.1 (Q3 2026)
-- [ ] ML-based threat scoring
-- [ ] Advanced anomaly detection
-- [ ] Threat actor attribution
-- [ ] Custom connector framework
-
-### v1.2 (Q4 2026)
-- [x] GraphQL API — see [CHANGELOG.md](./CHANGELOG.md)
-- [x] Kubernetes Helm charts — see [deploy/helm/intelgraph](./deploy/helm/intelgraph)
-- [ ] SIEM integrations (Splunk, ELK)
-
-### v2.0 (2027)
-- [ ] Distributed architecture
-- [ ] Collaborative analysis features
-- [ ] Decentralized intelligence sharing
-
-**Note**: Roadmap items marked as planned (not yet implemented).
+- [Architecture](./Architecture.md): system design and components
+- [Deployment](./deploy/helm/intelgraph/README.md): Docker and Kubernetes
+- [Changelog](./CHANGELOG.md): what's changed in this fork
+- [Roadmap](./ROADMAP.md): planned work
+- [Limitations](./LIMITATIONS.md): known limitations
+- [Contributing](./CONTRIBUTING.md): development guide
+- [Security Policy](./SECURITY.md): responsible disclosure
 
 ---
 
 ## 🔒 Security
 
-⚠️ **For security issues**, please refer to [SECURITY.md](./SECURITY.md) - **Do NOT open public issues**.
-
-### Security Features
-- JWT-based authentication
-- Role-based access control (RBAC)
-- Rate limiting & DDoS protection
-- Input validation & sanitization
-- Audit logging
-
----
-
-## 📞 Contact & Support
-
-- **GitHub**: [ashvinauti/intelgraph](https://github.com/ashvinauti/intelgraph)
-- **Issues**: [GitHub Issues](https://github.com/ashvinauti/intelgraph/issues)
-- **Questions**: [GitHub Discussions](https://github.com/ashvinauti/intelgraph/discussions)
-- **Original project**: [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph)
-
----
-
-## 📜 License
-
-MIT License - See [LICENSE](./LICENSE) for details.
+⚠️ **Please do not report security issues in public GitHub issues.** Follow [SECURITY.md](./SECURITY.md) instead.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
-- Code of conduct
-- Development setup
-- Testing requirements
-- Pull request process
+Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, testing requirements and the pull request process.
+
+For improvements to the core platform, also consider contributing upstream to the [original project](https://github.com/Berkayy123-h/intelgraph).
 
 ---
 
-## 📚 Tech Stack
+## 📜 License
 
-| Component | Technology |
-|-----------|-----------|
-| Backend | FastAPI, Uvicorn |
-| API | REST, GraphQL (Strawberry) |
-| Database | SQLite, PostgreSQL |
-| Frontend | D3.js, Chart.js |
-| Testing | pytest, 1,580+ tests |
-| Standards | STIX 2.1 |
-| Deployment | Docker, Kubernetes (Helm) |
+Released under the **MIT License**. See [LICENSE](./LICENSE).
+
+Copyright © 2026 **Berkay Altıntaş** (original work).
+Fork modifications by **Ashvin Auti**, also under the MIT License.
 
 ---
 
-**Questions?** Open an [issue](https://github.com/ashvinauti/intelgraph/issues) or start a [discussion](https://github.com/ashvinauti/intelgraph/discussions). This fork is based on the original [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph).
+## 📞 Contact
 
-⭐ If this project helps you, please consider starring it!
+- **This fork:** [ashvinauti/intelgraph](https://github.com/ashvinauti/intelgraph), maintained by Ashvin Auti ([issues](https://github.com/ashvinauti/intelgraph/issues))
+- **Original project:** [Berkayy123-h/intelgraph](https://github.com/Berkayy123-h/intelgraph), by Berkay Altıntaş
+
+⭐ If this project helps you, please star both this fork and the [original repository](https://github.com/Berkayy123-h/intelgraph).
