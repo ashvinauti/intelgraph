@@ -1,23 +1,20 @@
 #!/bin/bash
 # Benign "command-and-control" EMULATION node. It does two harmless things,
 # entirely within the lab VPC:
-#   1. Serves a static HTTP endpoint on :8080 that victim nodes can "beacon" to.
+#   1. Serves a static HTTP endpoint on :8080 that victim nodes "beacon" to.
 #   2. On a timer, pushes synthetic IOC campaigns into IntelGraph using the
 #      built-in `intelgraph simulate network` generator (documentation-space
 #      indicators only). No real C2, no real payloads.
+#
+# Registry/region/target values are injected by Terraform (no shell parsing).
 set -euxo pipefail
 
 dnf install -y docker
 systemctl enable --now docker
-
-IMG="${intelgraph_image}"
-if [[ "$${IMG}" == *.dkr.ecr.*.amazonaws.com/* ]]; then
-  ECR_REGION=$$(echo "$${IMG}" | sed -E 's#.*dkr\.ecr\.([^.]+)\.amazonaws\.com.*#\1#')
-  ECR_HOST=$$(echo "$${IMG}" | cut -d/ -f1)
-  aws ecr get-login-password --region "$${ECR_REGION}" \
-    | docker login --username AWS --password-stdin "$${ECR_HOST}"
-fi
-docker pull "$${IMG}"
+%{ if ecr_registry != "" ~}
+aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecr_registry}
+%{ endif ~}
+docker pull ${intelgraph_image}
 
 # 1. Static "C2 panel" listener (serves a canned beacon acknowledgement).
 mkdir -p /opt/c2/www
@@ -27,17 +24,20 @@ docker run -d --restart unless-stopped --name c2panel \
   -p 8080:8080 -v /opt/c2/www:/www:ro \
   python:3.11-slim python -m http.server 8080 --directory /www
 
-# 2. Telemetry generator: feed a fresh synthetic simulation into IntelGraph.
-cat >/usr/local/bin/ig-simulate <<EOS
+# 2. Telemetry generator. Written with a quoted heredoc (no expansion here),
+#    then Terraform values are substituted with sed so nothing needs escaping.
+cat > /usr/local/bin/ig-simulate <<'EOS'
 #!/bin/bash
 set -e
-docker run --rm "$${IMG}" uv run intelgraph simulate network \
-  --seed \$$RANDOM --campaigns ${sim_campaigns} --overlap 0.5 --ipv6 \
-  --feed --base-url http://${analytics_ip}:8000
+SEED=$RANDOM
+docker run --rm __IMAGE__ uv run intelgraph simulate network \
+  --seed "$SEED" --campaigns __CAMPAIGNS__ --overlap 0.5 --ipv6 \
+  --feed --base-url http://__ANALYTICS__:8000
 EOS
+sed -i "s#__IMAGE__#${intelgraph_image}#; s#__CAMPAIGNS__#${sim_campaigns}#; s#__ANALYTICS__#${analytics_ip}#" /usr/local/bin/ig-simulate
 chmod +x /usr/local/bin/ig-simulate
 
-cat >/etc/systemd/system/ig-simulate.service <<'EOS'
+cat > /etc/systemd/system/ig-simulate.service <<'EOS'
 [Unit]
 Description=Push synthetic IOC campaigns into IntelGraph (lab emulation)
 After=docker.service
@@ -46,7 +46,7 @@ Type=oneshot
 ExecStart=/usr/local/bin/ig-simulate
 EOS
 
-cat >/etc/systemd/system/ig-simulate.timer <<EOS
+cat > /etc/systemd/system/ig-simulate.timer <<EOS
 [Unit]
 Description=Run IntelGraph synthetic feed every ${sim_interval_min} minutes
 [Timer]

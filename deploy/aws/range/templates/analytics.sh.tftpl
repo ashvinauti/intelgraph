@@ -1,24 +1,19 @@
 #!/bin/bash
 # IntelGraph analytics/detection node. Runs the API + graph on :8000, reachable
 # only from within the lab VPC. This is the system under test.
+#
+# All registry/region values are injected by Terraform (no shell parsing), so
+# this script stays POSIX-simple and can't trip cloud-init's parser.
 set -euxo pipefail
 
 dnf install -y docker
 systemctl enable --now docker
-
-IMG="${intelgraph_image}"
-
-# Authenticate to ECR if the image lives there (no-op for public registries).
-if [[ "$${IMG}" == *.dkr.ecr.*.amazonaws.com/* ]]; then
-  ECR_REGION=$$(echo "$${IMG}" | sed -E 's#.*dkr\.ecr\.([^.]+)\.amazonaws\.com.*#\1#')
-  ECR_HOST=$$(echo "$${IMG}" | cut -d/ -f1)
-  aws ecr get-login-password --region "$${ECR_REGION}" \
-    | docker login --username AWS --password-stdin "$${ECR_HOST}"
-fi
-
-docker pull "$${IMG}"
+%{ if ecr_registry != "" ~}
+aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecr_registry}
+%{ endif ~}
+docker pull ${intelgraph_image}
 docker run -d --restart unless-stopped --name intelgraph \
   -p 8000:8000 \
-  -e INTELGRAPH_SECRET_KEY="${secret_key}" \
+  -e INTELGRAPH_SECRET_KEY='${secret_key}' \
   -e INTELGRAPH_DEPLOYMENT=lab \
-  "$${IMG}"
+  ${intelgraph_image}

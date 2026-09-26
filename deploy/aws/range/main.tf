@@ -17,6 +17,12 @@ locals {
   # Place emulation nodes in the first workload subnet; analytics too, so all
   # intra-lab traffic stays within one AZ (simple + cheap for a lab).
   subnet_id = var.workload_subnet_ids[0]
+
+  # Derive the ECR registry host (e.g. <acct>.dkr.ecr.<region>.amazonaws.com)
+  # from the image in HCL, so the boot script needs no shell parsing. Empty for
+  # public registries (Docker Hub / GHCR), which need no login.
+  is_ecr       = can(regex("[.]dkr[.]ecr[.]", var.intelgraph_image))
+  ecr_registry = local.is_ecr ? split("/", var.intelgraph_image)[0] : ""
 }
 
 # --- IAM: SSM-managed instances (no SSH keys) -------------------------------
@@ -64,7 +70,10 @@ resource "aws_instance" "analytics" {
   user_data = templatefile("${path.module}/templates/analytics.sh.tftpl", {
     intelgraph_image = var.intelgraph_image
     secret_key       = var.intelgraph_secret_key
+    region           = var.region
+    ecr_registry     = local.ecr_registry
   })
+  user_data_replace_on_change = true
 
   metadata_options {
     http_tokens   = "required" # IMDSv2 only
@@ -95,7 +104,10 @@ resource "aws_instance" "c2" {
     analytics_ip     = aws_instance.analytics.private_ip
     sim_campaigns    = var.sim_campaigns
     sim_interval_min = var.sim_interval_minutes
+    region           = var.region
+    ecr_registry     = local.ecr_registry
   })
+  user_data_replace_on_change = true
 
   metadata_options {
     http_tokens   = "required"
@@ -125,6 +137,7 @@ resource "aws_instance" "victim" {
     c2_ip           = aws_instance.c2[0].private_ip
     beacon_interval = var.beacon_interval_seconds
   })
+  user_data_replace_on_change = true
 
   metadata_options {
     http_tokens   = "required"
