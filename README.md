@@ -1,4 +1,4 @@
-# IntelGraph
+
 
 > An **open-source threat intelligence platform** that correlates indicators of compromise (IOCs) from multiple sources in a knowledge graph and explains every alert with an evidence-based reasoning chain.
 
