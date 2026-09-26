@@ -1,0 +1,32 @@
+#!/bin/bash
+# Victim EMULATION node. It periodically "beacons" to the C2 emulation node on
+# the lab's private network so that IntelGraph and VPC Flow Logs observe a
+# repeating intra-VPC callback pattern. It only ever contacts the C2 node's
+# private IP inside the lab VPC; it reaches nothing external.
+set -euxo pipefail
+
+cat >/usr/local/bin/lab-beacon <<'EOS'
+#!/bin/bash
+while true; do
+  curl -s -m 5 "http://C2_TARGET:8080/beacon" -A "lab-emulated-beacon" >/dev/null 2>&1 || true
+  sleep BEACON_INTERVAL
+done
+EOS
+
+# Bake in the C2 target and interval (rendered by Terraform).
+sed -i "s#C2_TARGET#${c2_ip}#; s#BEACON_INTERVAL#${beacon_interval}#" /usr/local/bin/lab-beacon
+chmod +x /usr/local/bin/lab-beacon
+
+cat >/etc/systemd/system/lab-beacon.service <<'EOS'
+[Unit]
+Description=Lab victim beacon emulation (intra-VPC only)
+After=network-online.target
+[Service]
+ExecStart=/usr/local/bin/lab-beacon
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOS
+
+systemctl daemon-reload
+systemctl enable --now lab-beacon.service

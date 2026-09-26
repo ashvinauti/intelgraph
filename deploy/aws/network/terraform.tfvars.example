@@ -1,0 +1,28 @@
+# Copy to terraform.tfvars and adjust. All values have safe defaults.
+
+region      = "us-east-1"
+name_prefix = "intelgraph-lab"
+vpc_cidr    = "10.100.0.0/16"
+az_count    = 2
+
+# One NAT gateway is plenty for a lab; set false for one-per-AZ HA.
+single_nat_gateway = true
+
+# Keep egress default-deny with a tight allowlist (recommended). The defaults
+# in variables.tf permit only OS/package/container-image registries.
+enable_egress_firewall = true
+
+# allowed_egress_domains = [
+#   ".amazonaws.com",
+#   ".docker.io",
+#   ".ghcr.io",
+#   ".pypi.org",
+#   ".pythonhosted.org",
+#   ".ubuntu.com",
+# ]
+
+flow_log_retention_days = 30
+
+extra_tags = {
+  Owner = "security-lab"
+}
