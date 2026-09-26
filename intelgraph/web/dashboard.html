@@ -1280,9 +1280,17 @@ async function loadGraph(limit = 200, since = null) {
   else if (since === '30d') document.getElementById('tf-30').classList.add('active');
   else document.getElementById('tf-all').classList.add('active');
 
+  if (typeof d3 === 'undefined') {
+    document.getElementById('graph-svg').innerHTML =
+      '<text x="20" y="30" fill="#ff7b72" font-size="13">Graph library (d3.js) failed to load. Check your internet connection or ad blocker, then reload.</text>';
+    return;
+  }
   const svg = d3.select('#graph-svg');
-  svg.selectAll('*').remove();
-  svg.append('text').attr('x', 20).attr('y', 30).attr('fill', '#8b949e').attr('font-size', 13).text('Loading graph…');
+  const showMessage = (msg) => {
+    svg.selectAll('*').remove();
+    svg.append('text').attr('x', 20).attr('y', 30).attr('fill', '#8b949e').attr('font-size', 13).text(msg);
+  };
+  showMessage('Loading graph…');
 
   try {
     let url = '/dashboard/graph?limit=' + limit;
@@ -1295,7 +1303,7 @@ async function loadGraph(limit = 200, since = null) {
     if (nodes.length > 0) console.log('[graph] first node:', JSON.stringify(nodes[0]).slice(0, 200));
     if (edges.length > 0) console.log('[graph] first edge:', JSON.stringify(edges[0]).slice(0, 200));
     if (!nodes.length) {
-      svg.select('text').text('No graph data. Run the pipeline first.');
+      showMessage('No graph data. Run the pipeline first (uv run intelgraph pipeline run).');
       return;
     }
 
@@ -1318,7 +1326,7 @@ async function loadGraph(limit = 200, since = null) {
     renderGraph(nodes, edges);
   } catch (e) {
     console.error('[graph] render error:', e);
-    svg.select('text').text('Error: ' + e.message);
+    showMessage('Error: ' + e.message);
   }
 }
 
@@ -1347,15 +1355,6 @@ function renderGraph(rawNodes, rawEdges) {
   const tooltip = d3.select('body').append('div').attr('class', 'graph-tooltip').style('opacity', 0);
 
   console.log('[graph] renderGraph:', rawNodes.length, 'nodes,', rawEdges.length, 'edges, SVG:', w, 'x', h);
-
-  const types = [...new Set(rawNodes.map(n => n.entity_type))];
-  const legend = d3.select('#graph-legend');
-  legend.selectAll('*').remove();
-  types.forEach(t => {
-    const g = legend.append('div').attr('class', 'item');
-    g.append('div').attr('class', 'dot').style('background', ENTITY_COLORS[t] || DEFAULT_COLOR);
-    g.append('span').text(t);
-  });
 
   const nodes = rawNodes.map(n => ({ ...n }));
   const nodeMap = new Map(nodes.map(n => [n.node_id, n]));
@@ -2017,8 +2016,7 @@ function highlightGraphNode(nodeId) {
       circle.attr('stroke', '#f0f6fc').attr('stroke-width', 4);
       // Brief flash
       setTimeout(() => {
-        circle.attr('stroke', d => colorByType(d.entity_type))
-              .attr('stroke-width', 2);
+        circle.attr('stroke', '#0d1117').attr('stroke-width', 1.5);
       }, 3000);
     });
 }
