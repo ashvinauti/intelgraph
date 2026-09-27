@@ -107,8 +107,8 @@ if ($Mode -eq "local") {
   New-Item -ItemType Directory -Force -Path $data | Out-Null
   $env:INTELGRAPH_SECRET_KEY        = -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
   $env:INTELGRAPH_DEPLOYMENT        = "local"
-  $env:INTELGRAPH_DB_PATH           = Join-Path $data "intelgraph.db"
-  $env:INTELGRAPH_STORAGE_PATH      = Join-Path $data "storage"
+  $env:INTELGRAPH_STORAGE_PATH      = Join-Path $data "intelgraph.db"   # main graph SQLite file
+  $env:INTELGRAPH_DB_PATH           = Join-Path $data "tenants.db"      # tenant registry SQLite file
   $env:INTELGRAPH_REPORT_DIR        = Join-Path $data "reports"
   $env:INTELGRAPH_TOTP_STATE        = Join-Path $data "totp_state.json"
   $env:INTELGRAPH_NOTIFICATION_STATE= Join-Path $data "notification_state.json"
