@@ -1,0 +1,114 @@
+========================================================================
+  IntelGraph - Threat Intelligence Lab   |   How to run it (Windows 11)
+========================================================================
+
+IntelGraph is a threat-intelligence platform that ingests indicators of
+compromise (malicious IPs, domains, file hashes, CVEs), correlates them in a
+knowledge graph, and explains each alert. This package includes a built-in
+SYNTHETIC data generator so you can see it working end-to-end with realistic
+but entirely fake data (no real malware, no real infrastructure).
+
+You can run it two ways:
+  * LOCAL  - on your laptop. No Docker, no cloud account, NO COST.  <- start here
+  * AWS    - the full isolated cloud lab. Needs an AWS account; costs ~$1/hour
+             while running. Optional.
+
+------------------------------------------------------------------------
+ STEP 1 - Extract
+------------------------------------------------------------------------
+Right-click the ZIP > "Extract All..." > choose a simple location such as:
+      C:\intelgraph
+After extracting you should have a folder named "intelgraph" containing
+this file, plus start.ps1, README.md, and other files.
+
+------------------------------------------------------------------------
+ STEP 2 - Open PowerShell in that folder
+------------------------------------------------------------------------
+Open the extracted "intelgraph" folder in File Explorer, then either:
+  - Click the address bar, type  powershell  and press Enter, OR
+  - Hold Shift, right-click empty space in the folder, and choose
+    "Open PowerShell window here".
+
+------------------------------------------------------------------------
+ STEP 3 - Run the launcher
+------------------------------------------------------------------------
+Copy-paste this one line and press Enter:
+
+      powershell -ExecutionPolicy Bypass -File .\start.ps1
+
+You will see a menu:
+
+      [1] Run LOCALLY on this laptop   (recommended - no Docker, no cost)
+      [2] Deploy to AWS                (full cloud lab - hourly cost)
+      [Q] Quit
+
+Type  1  and press Enter for the quick local demo.
+
+------------------------------------------------------------------------
+ WHAT HAPPENS NEXT (Local option)
+------------------------------------------------------------------------
+The script will automatically:
+  1. Install "uv" (a small Python tool) if it isn't already present.
+  2. Download Python 3.11 and the app's dependencies.
+  3. Start the IntelGraph server in a second PowerShell window.
+  4. Load a set of synthetic threat-intel campaigns.
+  5. Open your browser at:   http://localhost:8000/
+
+First run takes about 2-4 minutes (it downloads Python packages). After that
+the dashboard shows graph nodes, extracted entities, CVEs, alerts, and an
+"AI Analyst" panel highlighting the top threats.
+
+To load more data at any time, in the folder's PowerShell run:
+      uv run intelgraph simulate network --seed 7 --campaigns 10 --feed --base-url http://127.0.0.1:8000
+Then refresh the browser.
+
+To stop: close the second PowerShell window (the one titled "IntelGraph
+server"), or press Ctrl+C in it.
+
+------------------------------------------------------------------------
+ REQUIREMENTS
+------------------------------------------------------------------------
+  - Windows 10/11 with internet access (to download dependencies).
+  - "winget" (App Installer) - built into Windows 11. If the script says it
+    is missing, install "App Installer" from the Microsoft Store, then re-run.
+  - No administrator rights are needed for the LOCAL option.
+
+------------------------------------------------------------------------
+ TROUBLESHOOTING
+------------------------------------------------------------------------
+  * "running scripts is disabled on this system"
+      Use the exact command in Step 3 (it includes -ExecutionPolicy Bypass).
+
+  * "uv is not recognized" right after it installs
+      Close PowerShell, open a new PowerShell window in the folder, and run
+      the Step 3 command again. (New tools appear only in new windows.)
+
+  * Browser shows nothing at http://localhost:8000/
+      Give it another 30-60 seconds on first run, then refresh. Check the
+      second "IntelGraph server" window for any error messages.
+
+  * Port 8000 already in use
+      Run with a different port:
+          powershell -ExecutionPolicy Bypass -File .\start.ps1 -Mode local -Port 8080
+      then open http://localhost:8080/
+
+------------------------------------------------------------------------
+ OPTIONAL - Run the full isolated lab on AWS
+------------------------------------------------------------------------
+Choosing [2] deploys a self-contained security lab to AWS: a private network
+with locked-down internet access, a detection node running IntelGraph, and
+benign "attacker"/"victim" nodes that generate synthetic activity. It needs:
+  - An AWS account and credentials (the script guides you: run "aws configure").
+  - Docker Desktop (the script installs it; may require a restart the first time).
+It costs roughly $1/hour while running. When finished, tear it down with:
+      cd deploy\aws
+      .\demo-down.ps1
+See deploy\aws\README.md for full details.
+
+------------------------------------------------------------------------
+ NOTE ON SAFETY
+------------------------------------------------------------------------
+All "malicious" data in this package is SYNTHETIC. IP addresses and domains
+use ranges reserved for documentation/testing (they resolve to nothing real);
+file hashes are randomly generated. It is safe to run and demonstrate.
+========================================================================
