@@ -11,6 +11,22 @@
 
 ---
 
+## ⚡ Quick start (Windows 11)
+
+One script installs the dependencies and launches IntelGraph. From the repo
+root in PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+It asks whether to run **locally** (Python via `uv` — no Docker, no cost) or
+**on AWS** (the full isolated lab), installs what that choice needs, seeds
+synthetic data, and opens the dashboard. See [`deploy/aws/`](deploy/aws/) for
+the AWS lab details.
+
+---
+
 ## 👥 Authors & Credits
 
 | Role | Person | Links |

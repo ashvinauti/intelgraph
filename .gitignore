@@ -15,3 +15,16 @@ dist/
 build/
 *.log
 *.bak
+
+# Local run data (start.ps1 local mode)
+.localdata/
+
+# Terraform state / vars / providers (never commit — may contain secrets)
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+tf.plan
+**/terraform.tfvars
+crash.log

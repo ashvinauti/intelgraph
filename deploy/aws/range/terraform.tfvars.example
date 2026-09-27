@@ -1,0 +1,24 @@
+# Copy to terraform.tfvars. Wire the vpc_id / subnet / SG values from the
+# network layer's outputs (see README for terraform_remote_state or manual).
+
+region      = "us-east-1"
+name_prefix = "intelgraph-lab"
+
+# From `terraform output` in ../network:
+vpc_id                     = "vpc-xxxxxxxx"
+workload_subnet_ids        = ["subnet-aaaa", "subnet-bbbb"]
+workload_security_group_id = "sg-xxxxxxxx"
+
+# Build the repo Dockerfile and push to ECR/GHCR; registry host must be in the
+# network layer's allowed_egress_domains.
+intelgraph_image = "<acct>.dkr.ecr.us-east-1.amazonaws.com/intelgraph:latest"
+
+# openssl rand -hex 32  (keep out of version control)
+intelgraph_secret_key = "REPLACE_ME"
+
+# Emulation tuning
+enable_c2_node          = true
+enable_victim_node      = true
+beacon_interval_seconds = 60
+sim_campaigns           = 6
+sim_interval_minutes    = 10
