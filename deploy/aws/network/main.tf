@@ -25,6 +25,14 @@ locals {
   nat_count = var.single_nat_gateway ? 1 : var.az_count
 }
 
+# Short random suffix so CloudWatch log group names are unique per deployment.
+# CloudWatch log groups can linger after a destroy (e.g. VPC flow logs still
+# delivering), and their names are globally unique per account/region -- a fixed
+# name would then collide on the next apply. The suffix avoids that.
+resource "random_id" "suffix" {
+  byte_length = 3
+}
+
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true

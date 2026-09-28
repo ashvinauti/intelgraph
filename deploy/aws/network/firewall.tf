@@ -76,7 +76,7 @@ resource "aws_networkfirewall_firewall" "this" {
 # Firewall alert/flow logs to CloudWatch for visibility into blocked egress.
 resource "aws_cloudwatch_log_group" "firewall_alert" {
   count             = var.enable_egress_firewall ? 1 : 0
-  name              = "/${var.name_prefix}/networkfirewall/alert"
+  name              = "/${var.name_prefix}/networkfirewall/alert-${random_id.suffix.hex}"
   retention_in_days = var.flow_log_retention_days
 }
 

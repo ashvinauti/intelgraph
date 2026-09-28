@@ -2,7 +2,7 @@
 # simulated "malicious" traffic, and a data source you can feed to IntelGraph.
 
 resource "aws_cloudwatch_log_group" "flow" {
-  name              = "/${var.name_prefix}/vpc/flowlogs"
+  name              = "/${var.name_prefix}/vpc/flowlogs-${random_id.suffix.hex}"
   retention_in_days = var.flow_log_retention_days
 }
 
