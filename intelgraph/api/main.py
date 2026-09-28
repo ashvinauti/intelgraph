@@ -114,8 +114,10 @@ def create_app(config: dict[str, Any] | None = None) -> FastAPI:
     if config:
         _deep_merge(cfg, config)
     env_overrides = load_env_overrides()
-    for key, val in env_overrides.items():
-        cfg[key] = val
+    # Deep-merge so a nested override (e.g. INTELGRAPH_STORAGE_PATH -> storage.path)
+    # updates only that leaf instead of replacing the whole section and dropping
+    # sibling keys like storage.backend.
+    _deep_merge(cfg, env_overrides)
 
     profile = cfg.get("deployment", {}).get("profile", "development")
     profile_cfg = get_profile_config(profile)

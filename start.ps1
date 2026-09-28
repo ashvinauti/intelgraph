@@ -98,7 +98,7 @@ if ($Mode -eq "local") {
   Head "Provisioning Python 3.11 and dependencies"
   uv python install 3.11; if ($LASTEXITCODE -ne 0) { Die "uv python install failed." }
   Push-Location $Root
-  uv sync --no-dev; if ($LASTEXITCODE -ne 0) { Pop-Location; Die "uv sync failed." }
+  uv sync --no-dev --python 3.11; if ($LASTEXITCODE -ne 0) { Pop-Location; Die "uv sync failed." }
   Pop-Location
   Ok "Dependencies installed"
 
@@ -117,7 +117,7 @@ if ($Mode -eq "local") {
   Head "Starting the IntelGraph server"
   # Runs in its own window (inherits the env vars set above) so this script can
   # continue, seed data, and open the browser.
-  $serverCmd = "cd '$Root'; Write-Host 'IntelGraph server - keep this window open (Ctrl+C to stop).' -ForegroundColor Cyan; uv run uvicorn intelgraph.api.main:app --host 127.0.0.1 --port $Port"
+  $serverCmd = "cd '$Root'; Write-Host 'IntelGraph server - keep this window open (Ctrl+C to stop).' -ForegroundColor Cyan; uv run --python 3.11 uvicorn intelgraph.api.main:app --host 127.0.0.1 --port $Port"
   Start-Process powershell -ArgumentList "-NoExit","-Command",$serverCmd
 
   Info "Waiting for the server to come up on http://127.0.0.1:$Port ..."
@@ -137,7 +137,7 @@ if ($Mode -eq "local") {
 
   Head "Seeding synthetic threat-intel data"
   Push-Location $Root
-  uv run intelgraph simulate network --seed 4242 --campaigns 8 --overlap 0.5 --ipv6 --feed --base-url "http://127.0.0.1:$Port"
+  uv run --python 3.11 intelgraph simulate network --seed 4242 --campaigns 8 --overlap 0.5 --ipv6 --feed --base-url "http://127.0.0.1:$Port"
   Pop-Location
   if ($LASTEXITCODE -ne 0) { Warn "Seeding hit an issue, but the server is running - you can still open the UI." }
 
