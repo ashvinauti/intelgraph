@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-  IntelGraph — one-stop setup & launcher for Windows 11.
+  IntelGraph - one-stop setup & launcher for Windows 11.
 
 .DESCRIPTION
   Installs the dependencies you need and starts IntelGraph, either:
-    * LOCAL  — runs on this laptop with Python (via uv). No Docker, no cloud,
+    * LOCAL  - runs on this laptop with Python (via uv). No Docker, no cloud,
                no cost. Best for a quick look.
-    * AWS    — deploys the full isolated adversary-emulation lab to AWS.
+    * AWS    - deploys the full isolated adversary-emulation lab to AWS.
                (Needs an AWS account; incurs hourly cost while running.)
 
   Run it with no arguments for an interactive menu:
@@ -52,7 +52,7 @@ function Ensure-Tool {
   winget install --id $WingetId -e --source winget --accept-package-agreements --accept-source-agreements --silent 2>$null
   Refresh-Path
   if (Get-Command $Cmd -ErrorAction SilentlyContinue) { Ok "$Friendly installed"; return $true }
-  Warn "$Friendly installed but not visible yet — you may need to reopen PowerShell."
+  Warn "$Friendly installed but not visible yet - you may need to reopen PowerShell."
   return $false
 }
 
@@ -73,7 +73,7 @@ Write-Host "  ------------------------------------" -ForegroundColor Blue
 # --- choose mode ------------------------------------------------------------
 if (-not $Mode) {
   Write-Host "`nWhat would you like to do?" -ForegroundColor White
-  Write-Host "  [1] Run LOCALLY on this laptop   (Python via uv - no Docker, no cost)  <- recommended"
+  Write-Host "  [1] Run LOCALLY on this laptop   (Python via uv - no Docker, no cost)  (recommended)"
   Write-Host "  [2] Deploy to AWS                (full isolated cloud lab - hourly cost)"
   Write-Host "  [Q] Quit"
   $choice = Read-Host "`nEnter 1, 2, or Q"
@@ -89,7 +89,7 @@ if (-not $Mode) {
 # LOCAL MODE
 # ===========================================================================
 if ($Mode -eq "local") {
-  Head "Local setup — installing Python toolchain (uv)"
+  Head "Local setup - installing Python toolchain (uv)"
   Ensure-Tool -Cmd "uv" -WingetId "astral-sh.uv" -Friendly "uv (Python manager)" | Out-Null
   if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Die "uv is not on PATH yet. Close PowerShell, reopen it, and run this script again."
@@ -139,7 +139,7 @@ if ($Mode -eq "local") {
   Push-Location $Root
   uv run intelgraph simulate network --seed 4242 --campaigns 8 --overlap 0.5 --ipv6 --feed --base-url "http://127.0.0.1:$Port"
   Pop-Location
-  if ($LASTEXITCODE -ne 0) { Warn "Seeding hit an issue, but the server is running — you can still open the UI." }
+  if ($LASTEXITCODE -ne 0) { Warn "Seeding hit an issue, but the server is running - you can still open the UI." }
 
   Start-Process "http://localhost:$Port/"
   Write-Host "`n============================================================" -ForegroundColor Green
@@ -158,12 +158,12 @@ if ($Mode -eq "local") {
 # AWS MODE
 # ===========================================================================
 if ($Mode -eq "aws") {
-  Head "AWS setup — installing the cloud toolchain"
+  Head "AWS setup - installing the cloud toolchain"
   Ensure-Tool -Cmd "terraform" -WingetId "Hashicorp.Terraform" -Friendly "Terraform" | Out-Null
   Ensure-Tool -Cmd "aws"       -WingetId "Amazon.AWSCLI"       -Friendly "AWS CLI"   | Out-Null
   Ensure-Tool -Cmd "docker"    -WingetId "Docker.DockerDesktop" -Friendly "Docker Desktop" | Out-Null
 
-  # Session Manager plugin (no winget package — install from AWS if missing).
+  # Session Manager plugin (no winget package - install from AWS if missing).
   $pluginExe = "C:\Program Files\Amazon\SessionManagerPlugin\bin\session-manager-plugin.exe"
   if (-not (Test-Path $pluginExe)) {
     Info "Installing AWS Session Manager plugin ..."
@@ -198,9 +198,9 @@ if ($Mode -eq "aws") {
   if (-not $region) { $region = "eu-west-2" }
 
   Head "Launching the AWS lab (this takes ~12-15 minutes)"
-  Info "The AWS Network Firewall alone takes ~8 min to create — this is normal."
+  Info "The AWS Network Firewall alone takes ~8 min to create - this is normal."
   $demo = Join-Path $Root "deploy\aws\demo-up.ps1"
-  if (-not (Test-Path $demo)) { Die "Could not find deploy\aws\demo-up.ps1 — is this the full repo?" }
+  if (-not (Test-Path $demo)) { Die "Could not find deploy\aws\demo-up.ps1 - is this the full repo?" }
   & $demo -Region $region
   exit $LASTEXITCODE
 }
